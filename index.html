@@ -132,6 +132,18 @@ td .ro.txt{font-family:'Alexandria',sans-serif;font-size:11px;font-weight:300;co
 .croq-grid img{display:block;width:100%;height:132px;object-fit:cover;cursor:zoom-in;background:#fff}
 .croq-grid figcaption{display:flex;align-items:center;gap:5px;padding:5px 6px;border-top:1px solid #EDF4F3}
 .croq-grid figcaption input{border:0;background:transparent;flex:1;min-width:0}
+/* Croquis a la izquierda de la tabla, como en el formato impreso. Solo
+   cuando el concepto ya tiene croquis; si no, la caja para subirlos va abajo. */
+.lado{display:grid;grid-template-columns:minmax(240px,34%) minmax(0,1fr);align-items:start}
+.lado-croq .croq{margin:0 0 12px 11px}
+.lado-croq .croq-grid{grid-template-columns:1fr}
+.lado-croq .croq-grid img{height:auto;max-height:none;object-fit:contain}
+.lado-main{min-width:0}
+@media(max-width:820px){.lado{grid-template-columns:minmax(0,1fr)}.lado-croq .croq{margin:0 11px 12px}}
+.notag-tg{display:inline-flex;align-items:center;gap:6px;margin:0 15px 14px;padding:4px 10px;border:1px solid var(--line);
+  border-radius:20px;background:#fff;color:var(--soft);font:inherit;font-size:10.5px;cursor:pointer}
+.notag-tg.on{color:var(--terra);border-color:#E9CDBF}
+.notag-tg.abierta{margin-bottom:6px}
 .croq-pie{display:none}
 .lightbox{position:fixed;inset:0;z-index:99;background:rgba(18,60,71,.92);display:flex;flex-direction:column;
   align-items:center;justify-content:center;gap:10px;padding:24px;cursor:zoom-out}
@@ -318,6 +330,10 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   .croq-grid img{height:auto!important;max-height:190pt;object-fit:contain!important}
   .croq-grid figcaption input{display:none!important}
   .croq-pie{display:block!important;padding:3pt 4pt;font-size:6.5pt;color:#000}
+  .lado{grid-template-columns:34% 1fr!important;gap:6pt}
+  .lado-croq .croq-grid{grid-template-columns:1fr!important}
+  .lado-croq .croq-grid img{max-height:none}
+  .notag-tg{display:none!important}
   /* al imprimir se muestra todo, aunque lo tengas plegado en pantalla */
   .panel.plegado>.panel-bd{display:block!important}
   /* el tablero de avance es de uso interno: nunca se imprime */
@@ -382,23 +398,59 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc table{width:100%;border-collapse:collapse;font-size:7.5pt;margin-bottom:3mm}
   #entregaDoc thead th{background:#123C47!important;color:#fff!important;font-size:6.3pt!important;font-weight:600;
     text-transform:uppercase;letter-spacing:.07em;padding:3.4pt 4pt!important;text-align:left;border:0!important}
-  #entregaDoc td{border-bottom:.25pt solid #DDE7E7!important;padding:3.2pt 4pt;vertical-align:top;color:#1F3339!important}
-  #entregaDoc tbody tr:nth-child(even) td{background:#FAFCFC!important}
+  /* cuadrícula de hoja de cálculo: cada celda con su borde */
+  #entregaDoc thead th{border:.4pt solid #123C47!important}
+  #entregaDoc td{border:.4pt solid #9FB5B5!important;padding:3pt 4pt;vertical-align:top;color:#1F3339!important}
   #entregaDoc td.n,#entregaDoc th.n{text-align:right;font-family:'IBM Plex Mono',monospace;white-space:nowrap}
+  #entregaDoc td.c,#entregaDoc th.c{text-align:center}
+  #entregaDoc td.r{text-align:right}
   #entregaDoc tr.ded td{background:#FBF1EA!important;color:#8A4E35!important}
-  #entregaDoc tr.cn td{border-bottom:0!important;padding-bottom:1pt}
-  #entregaDoc tr.nt td{font-size:6.6pt;font-style:italic;color:#5A6E74!important;
-    padding:0 4pt 3.4pt;line-height:1.35;border-bottom:.25pt solid #DDE7E7!important}
-  #entregaDoc tr.t td{background:#D8ECEA!important;color:#123C47!important;border-top:1pt solid #123C47!important;border-bottom:0!important;font-weight:700;font-size:8pt}
-  #entregaDoc tr.grp td{background:#E8F2F1!important;color:#123C47!important;font-weight:600;
-    text-transform:uppercase;letter-spacing:.05em;font-size:6.8pt!important;border-top:.5pt solid #3D8A8A!important}
-  #entregaDoc .ent-croq{display:grid;grid-template-columns:1fr 1fr;gap:4mm;margin:3mm 0 5mm}
-  #entregaDoc .ent-croq.uno{grid-template-columns:1fr}
-  #entregaDoc .ent-croq.uno img{max-height:125mm}
-  #entregaDoc .ent-croq figure{margin:0;break-inside:avoid;border:.4pt solid #D8ECEA;padding:2mm}
-  #entregaDoc .ent-croq img{width:100%;height:auto;max-height:95mm;object-fit:contain;display:block}
-  #entregaDoc .ent-croq figcaption{font-size:6.5pt;color:#5A6E74;font-style:italic;padding-top:1.5mm}
+  #entregaDoc tr.t td{background:#123C47!important;color:#fff!important;font-weight:600;font-size:8pt}
+  #entregaDoc tr.s td{background:#F4F9F9!important;color:#123C47!important;font-weight:600}
+  #entregaDoc tr.grp td{background:#D8ECEA!important;color:#123C47!important;font-weight:600;
+    text-transform:uppercase;letter-spacing:.05em;font-size:6.8pt!important}
+  #entregaDoc .tag{border:0!important;border-radius:20pt;padding:.8pt 4pt;font-size:6.5pt;font-family:'IBM Plex Mono',monospace;
+    background:#D8ECEA!important;color:#1A6B6B!important;white-space:nowrap}
+  #entregaDoc .tag.mat{background:#E3EEF5!important;color:#2B5F7E!important}
+  #entregaDoc .tag.mo{background:#F5E9E1!important;color:#A55C3A!important}
+  #entregaDoc .tag.eq{background:#E8EEE4!important;color:#4A6B3A!important}
+  #entregaDoc .tag.pct{background:#EDE7F2!important;color:#5C4A7E!important}
+  #entregaDoc .tag.aux{background:#DCE9E0!important;color:#2F6B4A!important}
+  #entregaDoc .tag.cuad{background:#F1E3D9!important;color:#8A4A28!important}
   #entregaDoc .ent-blk{break-inside:avoid}
+  /* hojas horizontales de matriz y generador */
+  @page land{size:letter landscape;margin:7mm 9mm}
+  #entregaDoc .ent-sec.land{page:land;margin-top:0}
+  #entregaDoc .ent-hoja+.ent-hoja,#entregaDoc .ent-sec.land+.ent-sec.land{break-before:page;page-break-before:always}
+  #entregaDoc .ent-mem{display:grid;grid-template-columns:42mm 1fr 62mm;border:.5pt solid #9FB5B5;margin-bottom:2mm;font-size:6.6pt}
+  #entregaDoc .ent-mem .emp{padding:1.2mm 2mm;border-right:.5pt solid #9FB5B5;display:flex;flex-direction:column;justify-content:center}
+  #entregaDoc .ent-mem .emp b{font-size:10pt;color:#123C47}
+  #entregaDoc .ent-mem .tit{display:flex;align-items:center;justify-content:center;text-align:center;font-size:11pt;
+    font-weight:600;color:#123C47;letter-spacing:.06em;text-transform:uppercase}
+  #entregaDoc .ent-mem .dat{border-left:.5pt solid #9FB5B5}
+  #entregaDoc .ent-mem .dat div{display:grid;grid-template-columns:17mm 1fr;border-bottom:.4pt solid #9FB5B5}
+  #entregaDoc .ent-mem .dat div:last-child{border-bottom:0}
+  #entregaDoc .ent-mem .dat span{padding:.5mm 1.5mm}
+  #entregaDoc .ent-mem .dat span:first-child{background:#F4F9F9!important;color:#123C47;font-weight:600}
+  #entregaDoc table.ent-cpt{margin-bottom:2mm}
+  #entregaDoc table.ent-cpt td{font-size:6.5pt}
+  #entregaDoc table.ent-cpt th{background:#F4F9F9!important;color:#123C47!important;border:.4pt solid #9FB5B5!important;
+    font-size:6.3pt;text-transform:uppercase;letter-spacing:.05em;padding:2pt 4pt;text-align:left}
+  /* la hoja horizontal va más apretada para que cada análisis quepa en una sola hoja */
+  #entregaDoc .ent-hoja table{font-size:6.8pt;line-height:1.22}
+  #entregaDoc .ent-hoja td{padding:1.4pt 3pt}
+  #entregaDoc .ent-hoja thead th{padding:2pt 3pt!important}
+  #entregaDoc .ent-hoja tr.t td{font-size:7.2pt}
+  #entregaDoc .ent-lado{display:grid;grid-template-columns:31% 1fr;gap:3.5mm;align-items:start}
+  #entregaDoc .ent-lmain{min-width:0}
+  #entregaDoc .ent-lcroq{display:grid;gap:3mm}
+  #entregaDoc .ent-lcroq figure{margin:0;border:.4pt solid #9FB5B5;padding:1.5mm;break-inside:avoid}
+  #entregaDoc .ent-lcroq img{width:100%;height:auto;max-height:165mm;object-fit:contain;display:block}
+  #entregaDoc .ent-lcroq figcaption{font-size:6.3pt;color:#5A6E74;padding-top:1mm}
+  #entregaDoc .ent-letra{border:.4pt solid #9FB5B5;border-top:0;margin-top:-3mm;margin-bottom:3mm;padding:2pt 4pt;
+    text-align:center;font-size:7pt;font-weight:600;color:#123C47}
+  #entregaDoc .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:20mm;margin:10mm 8mm 0;text-align:center;font-size:7pt;color:#5A6E74}
+  #entregaDoc .ent-firma div{border-top:.5pt solid #1F3339;padding-top:1mm}
   #entregaDoc .ent-pie{margin-top:3mm;border-top:.5pt solid #D8ECEA;padding-top:1.5mm;font-size:6.8pt;
     color:#3D8A8A;display:flex;justify-content:space-between}
 }
@@ -418,7 +470,12 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
 body.rev-wait .app,body.rev-wait .dock{display:none}
 body.rev td select{appearance:none;-webkit-appearance:none;background-image:none;padding-right:8px}
 body.rev .dock{display:none!important}
-body.rev .act,body.rev th.act,body.rev button.icon,body.rev .btn.ghost,
+/* En revisión la columna de acciones se queda solo con el botón de las
+   notas que sí tienen texto: la nota no se ve hasta que le pican. */
+body.rev td.act{width:30px;padding:0 4px}
+body.rev td.act>*:not(.nb.on),body.rev th.act>*{display:none!important}
+body.rev button.icon:not(.nb){display:none!important}
+body.rev .btn.ghost,
 body.rev .croq-hd,body.rev .croq-vacio,body.rev .rev-box,body.rev tr.rev-row,
 body.rev .rev-dot,body.rev .avisos,body.rev .panel .btn,body.rev .hint{display:none!important}
 body.rev .croq{border-style:solid;border-color:#E3EDEC;background:#fff}
@@ -1381,10 +1438,11 @@ function togNota(key,vista){
   const n=document.querySelector(`[data-nota="${key}"]`);if(n)n.focus();
 }
 const btnNota=(key,vista,tiene)=>
-  `<button class="icon${tiene?' on':''}" onclick="togNota('${key}','${vista}')" title="Nota: de dónde sale este número">&#9998;</button>`;
-/* La nota se dibuja solo si tiene texto o si la abriste con el lápiz. */
+  `<button class="icon nb${tiene?' on':''}" onclick="togNota('${key}','${vista}')" title="${tiene?'Ver nota':'Nota: de dónde sale este número'}">&#9998;</button>`;
+/* La nota queda escondida aunque tenga texto: solo se abre con el lápiz.
+   El lápiz en terracota avisa que ese renglón sí trae nota. */
 const filaNota=(key,vista,valor,span,setter,ph)=>
-  (valor||notasAbiertas.has(key))
+  notasAbiertas.has(key)
   ?`<tr class="nota"><td></td><td colspan="${span}"><textarea class="nota-in" rows="1" data-nota="${key}"
       spellcheck="false" placeholder="${esc(ph||'De dónde sale este número')}"
       oninput="${setter};autoAltoNota(this)" onchange="(VISTAS['${vista}']||(()=>{}))()">${esc(valor||'')}</textarea><div class="pr-nota">${esc(valor||'')}</div></td><td class="act"></td></tr>`
@@ -1431,12 +1489,18 @@ function blindar(){
   if(document.body)arranca();else document.addEventListener('DOMContentLoaded',arranca);
   window.addEventListener('beforeprint',ajustarNotas);
 })();
-const notaGral=(valor,setter)=>`
+/* Las notas generales también van plegadas: un botón que dice si hay algo
+   escrito, y la caja aparece al picarle. */
+const notaGral=(valor,setter,key,vista)=>{
+  const tiene=!!(valor||'').trim(),abierta=notasAbiertas.has(key);
+  if(REV&&!tiene)return '';
+  const tg=`<button class="notag-tg${tiene?' on':''}${abierta?' abierta':''}" onclick="togNota('${key}','${vista}')">&#9998; ${abierta?'Ocultar notas del análisis':tiene?'Ver notas del análisis':'Agregar notas del análisis'}</button>`;
+  return tg+(abierta?`
   <div class="notag">
-    <label>Notas del análisis</label>
     <textarea class="f-in" rows="2" spellcheck="false" placeholder="Supuestos, fuentes, de dónde salieron los rendimientos" oninput="${setter}">${esc(valor||'')}</textarea>
     <div class="pr">${esc(valor||'')}</div>
-  </div>`;
+  </div>`:'');
+};
 
 const rowBtns=(up,dn,dup,del)=>
   `<button class="icon" onclick="${up}" title="Subir">&#8593;</button>
@@ -1869,23 +1933,101 @@ function renderEntrega(){
     </div>`;
 }
 
-const entCroq=(cid,b)=>{
-  const cs=croqDe(cid,b);
-  if(!cs.length)return '';
-  return `<div class="ent-croq${cs.length===1?' uno':''}">${cs.map(k=>
-    `<figure><img src="${k.src}" alt="Croquis">${k.nota?`<figcaption>${esc(k.nota)}</figcaption>`:''}</figure>`).join('')}</div>`;
-};
 const entTbl=(cols,filas)=>`<div class="tw"><table><thead><tr>${cols.map(c=>
   `<th class="${c[1]||''}" ${c[2]?`style="width:${c[2]}"`:''}>${esc(c[0])}</th>`).join('')}</tr></thead>
   <tbody>${filas}</tbody></table></div>`;
+/* Las notas son memoria de cálculo para ti: se ven en la app, no en la entrega. */
+const entPill=o=>`<span class="tag ${esc(o.tipo)}">${esc(o.clave)}</span>`;
 function entRenglones(rows){
   const m=calcRows(rows);
-  return entTbl([['Clave','',''],['Insumo','',''],['Unidad','','48pt'],['Cantidad','n','60pt'],['Costo','n','60pt'],['Importe','n','66pt']],
-    m.det.map(x=>`<tr class="${x.row.nota?'cn':''}"><td>${esc(x.o.clave)}</td><td>${esc(x.o.desc)}</td>
-      <td>${esc(x.o.unidad)}</td><td class="n">${dec(x.row.cant,4)}</td>
-      <td class="n">${x.o.tipo==='pct'?'—':dec(x.o.costo)}</td><td class="n">${dec(x.imp)}</td></tr>`
-      +(x.row.nota?`<tr class="nt"><td></td><td colspan="5">${esc(x.row.nota)}</td></tr>`:'')).join('')
+  return entTbl([['Clave','','62pt'],['Insumo','',''],['Unidad','','40pt'],['Cantidad','n','60pt'],['Costo','n','60pt'],['Importe','n','66pt']],
+    m.det.map(x=>`<tr><td>${entPill(x.o)}</td><td>${esc(x.o.desc)}</td>
+      <td class="c">${esc(x.o.unidad)}</td><td class="n">${dec(x.row.cant,4)}</td>
+      <td class="n">${x.o.tipo==='pct'?'—':dec(x.o.costo)}</td><td class="n">${dec(x.imp)}</td></tr>`).join('')
     +`<tr class="t"><td colspan="5">Costo directo</td><td class="n">${dec(m.total)}</td></tr>`);
+}
+/* Importe con letra, como lo lleva el formato de precio unitario. */
+function numLetras(v){
+  const U=['','UN','DOS','TRES','CUATRO','CINCO','SEIS','SIETE','OCHO','NUEVE','DIEZ','ONCE','DOCE','TRECE','CATORCE',
+    'QUINCE','DIECISÉIS','DIECISIETE','DIECIOCHO','DIECINUEVE','VEINTE','VEINTIÚN','VEINTIDÓS','VEINTITRÉS',
+    'VEINTICUATRO','VEINTICINCO','VEINTISÉIS','VEINTISIETE','VEINTIOCHO','VEINTINUEVE'];
+  const D=['','','','TREINTA','CUARENTA','CINCUENTA','SESENTA','SETENTA','OCHENTA','NOVENTA'];
+  const C=['','CIENTO','DOSCIENTOS','TRESCIENTOS','CUATROCIENTOS','QUINIENTOS','SEISCIENTOS','SETECIENTOS','OCHOCIENTOS','NOVECIENTOS'];
+  const tres=n=>{if(n===100)return 'CIEN';const r=n%100;
+    const dd=r<30?U[r]:D[Math.floor(r/10)]+(r%10?' Y '+U[r%10]:'');
+    return [C[Math.floor(n/100)],dd].filter(Boolean).join(' ');};
+  let cent=Math.round(N(v)*100),ent=Math.floor(cent/100);cent=cent%100;
+  const mill=Math.floor(ent/1e6),mil=Math.floor(ent/1000)%1000,res=ent%1000;
+  const w=[mill?(mill===1?'UN MILLÓN':tres(mill)+' MILLONES'):'',mil?(mil===1?'MIL':tres(mil)+' MIL'):'',tres(res)]
+    .filter(Boolean).join(' ')||'CERO';
+  const de=mill&&!mil&&!res?' DE':'';
+  return `(${w}${de} ${ent===1?'PESO':'PESOS'} ${String(cent).padStart(2,'0')}/100 M.N.)`;
+}
+const fechaCorta=f=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(f||'');return m?`${m[3]}/${m[2]}/${m[1]}`:(f||'');};
+/* Membrete tipo Excel que encabeza cada hoja de matriz y de generador. */
+function entMembrete(titulo){
+  const o=db.obra,fila=(l,v)=>`<div><span>${esc(l)}</span><span>${esc(v||'—')}</span></div>`;
+  return `<div class="ent-mem">
+    <div class="emp"><b>${esc(o.empresa||'')}</b><span>${esc(o.nombre||'')}</span></div>
+    <div class="tit">${esc(titulo)}</div>
+    <div class="dat">${fila('Obra',o.nombre)}${fila('Ubicación',o.ubic)}${fila('Elaboró',o.elab||o.alumno)}${fila('Fecha',fechaCorta(o.fecha))}</div>
+  </div>`;
+}
+function entConcepto(c,etq,valor){
+  return `<table class="ent-cpt"><tr><th style="width:52pt">Clave</th><th>Concepto</th><th style="width:30pt">Unidad</th><th style="width:54pt">${esc(etq)}</th></tr>
+    <tr><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td><td class="n">${valor}</td></tr></table>`;
+}
+/* Croquis en columna a la izquierda; si el concepto no tiene, la tabla va a todo lo ancho. */
+function entLado(cid,b,main){
+  const cs=croqDe(cid,b);
+  if(!cs.length)return main;
+  /* los croquis se reparten el alto de la hoja horizontal para no empujar
+     la columna a una segunda página */
+  const alto=Math.floor((170-(cs.length-1)*5)/cs.length);
+  return `<div class="ent-lado"><div class="ent-lcroq">${cs.map(k=>
+    `<figure><img src="${k.src}" alt="Croquis" style="max-height:${alto}mm">${k.nota?`<figcaption>${esc(k.nota)}</figcaption>`:''}</figure>`).join('')}</div>
+    <div class="ent-lmain">${main}</div></div>`;
+}
+function entHojaMatriz(c){
+  const m=calcRows(db.matrices[c.id]||[]);
+  let f='';
+  db.tipos.forEach(t=>{
+    const g=m.det.filter(d=>grupoMat(d.o.tipo)===t.k);if(!g.length)return;
+    f+=`<tr class="grp"><td colspan="6">${esc(t.label)}</td></tr>`+g.map(d=>`<tr><td>${entPill(d.o)}</td><td>${esc(d.o.desc)}</td>
+      <td class="c">${esc(d.o.unidad)}</td><td class="n">${dec(d.row.cant,4)}</td>
+      <td class="n">${d.o.tipo==='pct'?'—':dec(d.o.costo)}</td><td class="n">${dec(d.imp)}</td></tr>`).join('')
+      +`<tr class="s"><td colspan="5" class="r">Subtotal ${esc(t.label.toLowerCase())}</td><td class="n">${dec(g.reduce((s,d)=>s+d.imp,0))}</td></tr>`;
+  });
+  const cd=m.total,pI=pctIndirectos(),ui=utilidadIntegrada(),g=db.cargos;
+  const fin=N(g.fin)/100,ca=N(g.ca)/100,pu=cd*factorSobrecosto();
+  const cargo=(l,p,v)=>`<tr class="k"><td colspan="4" class="r">${esc(l)}</td><td class="n">${dec(p*100,2)}%</td><td class="n">${dec(v)}</td></tr>`;
+  const tabla=entTbl([['Clave','','52pt'],['Descripción','',''],['Unidad','c','30pt'],['Cantidad','n','48pt'],['Costo','n','50pt'],['Importe','n','54pt']],
+    (f||`<tr><td colspan="6">Matriz sin renglones.</td></tr>`)
+    +`<tr class="t"><td colspan="5" class="r">Costo directo</td><td class="n">${dec(cd)}</td></tr>`
+    +cargo('Indirectos',pI,cd*pI)
+    +cargo('Utilidad',ui,cd*(1+pI)*ui)
+    +cargo('Financiamiento',fin,cd*(1+pI)*(1+ui)*fin)
+    +cargo('Cargos adicionales',ca,cd*(1+pI)*(1+ui)*(1+fin)*ca)
+    +`<tr class="t"><td colspan="5" class="r">Precio unitario por ${esc(c.unidad)}</td><td class="n">${dec(pu)}</td></tr>`)
+    +`<div class="ent-letra">${numLetras(pu)}</div>`;
+  return `<div class="ent-hoja">${entMembrete('Análisis de precio unitario')}
+    ${entLado(c.id,'mat',entConcepto(c,'Cantidad',dec(cantidad(c.id),3))+tabla)}</div>`;
+}
+function entHojaGen(c){
+  const rows=db.generadores[c.id]||[],nc=db.genCols.length+1;
+  const suma=rows.filter(r=>!r.ded).reduce((a,r)=>a+parcialRaw(r),0);
+  const dedu=rows.filter(r=>r.ded).reduce((a,r)=>a+parcialRaw(r),0);
+  const tabla=entTbl(
+    [['#','c','20pt']].concat(db.genCols.map(g=>[g.label,g.t==='num'?'n':''])).concat([['Parcial','n','58pt'],['Referencia','','90pt']]),
+    rows.map((r,ix)=>`<tr class="${r.ded?'ded':''}"><td class="c">${ix+1}</td>
+      ${db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${esc((r.v||{})[g.id]??'')}</td>`).join('')}
+      <td class="n">${r.ded?'&minus;&nbsp;':''}${dec(parcialRaw(r),3)}</td><td>${esc((r.v||{}).ref??'')}</td></tr>`).join('')
+    +(dedu?`<tr class="s"><td colspan="${nc}" class="r">Suma</td><td class="n">${dec(suma,3)}</td><td></td></tr>
+       <tr class="s"><td colspan="${nc}" class="r">Deducciones</td><td class="n">&minus;&nbsp;${dec(dedu,3)}</td><td></td></tr>`:'')
+    +`<tr class="t"><td colspan="${nc}" class="r">Total en ${esc(c.unidad)}</td><td class="n">${dec(cantidad(c.id),3)}</td><td></td></tr>`)
+    +`<div class="ent-firma"><div>Elaboró</div><div>Revisó</div></div>`;
+  return `<div class="ent-hoja">${entMembrete('Número generador')}
+    ${entLado(c.id,'gen',entConcepto(c,'Total',dec(cantidad(c.id),3))+tabla)}</div>`;
 }
 /* Con un argumento —'ins', 'pre', 'mat'…— arma el documento con esa sola
    sección, pero con la misma portada y el mismo membrete: sirve para
@@ -1922,11 +2064,9 @@ function entregaHTML(solo){
        bloques es el de db.tipos; dentro, alfabético por clave. */
     const lista=entSel('ins'),ordCl=(a,b)=>String(a.clave).localeCompare(String(b.clave),'es',{numeric:true});
     const filaIns=i=>{const r=resolveRef(i.id);
-      return `<tr class="${i.nota?'cn':''}"><td>${esc(i.clave)}</td><td>${esc(i.desc)}</td>
-        <td>${esc(i.unidad)}</td><td>${esc((db.tipos.find(t=>t.k===i.tipo)||{}).tag||'')}</td>
-        <td class="n">${i.tipo==='pct'?'—':dec(r?r.costo:0)}</td></tr>`
-        +(i.nota?`<tr class="nt"><td></td><td colspan="4">${esc(i.nota)}</td></tr>`:'')
-        +(i.fuente?`<tr class="nt"><td></td><td colspan="4">Fuente: ${esc(i.fuente)}</td></tr>`:'');};
+      return `<tr><td>${entPill(i)}</td><td>${esc(i.desc)}</td>
+        <td class="c">${esc(i.unidad)}</td><td>${esc((db.tipos.find(t=>t.k===i.tipo)||{}).tag||'')}</td>
+        <td class="n">${i.tipo==='pct'?'—':dec(r?r.costo:0)}</td></tr>`;};
     let fi='';
     db.tipos.filter(t=>!['aux','cuad'].includes(t.k)).forEach(t=>{
       const rows=lista.filter(o=>o.tipo===t.k).sort(ordCl);
@@ -1942,62 +2082,37 @@ function entregaHTML(solo){
   if(sec.cua){
     h+=banda('Cuadrillas')+`<div class="ent-rot">${entSel('cua').length} cuadrillas</div>`+entSel('cua').map(c=>
       `<div class="ent-blk"><div class="ent-sub">${esc(c.clave)} · por ${esc(c.unidad)}</div>
-       <div class="ent-desc">${esc(c.desc)}</div>${entRenglones(c.comp)}
-       ${c.notaGral?`<div class="ent-desc"><i>${esc(c.notaGral)}</i></div>`:''}</div>`).join('')+pie('Cuadrillas')+`</div>`;
+       <div class="ent-desc">${esc(c.desc)}</div>${entRenglones(c.comp)}</div>`).join('')+pie('Cuadrillas')+`</div>`;
   }
   if(sec.bas){
     h+=banda('Básicos')+`<div class="ent-rot">${entSel('bas').length} básicos</div>`+entSel('bas').map(a=>
       `<div class="ent-blk"><div class="ent-sub">${esc(a.clave)} · por ${esc(a.unidad)}</div>
-       <div class="ent-desc">${esc(a.desc)}</div>${entRenglones(a.comp)}
-       ${a.notaGral?`<div class="ent-desc"><i>${esc(a.notaGral)}</i></div>`:''}</div>`).join('')+pie('Básicos')+`</div>`;
+       <div class="ent-desc">${esc(a.desc)}</div>${entRenglones(a.comp)}</div>`).join('')+pie('Básicos')+`</div>`;
   }
   if(sec.con){
     let f='';
     db.partidas.forEach(p=>{
       const cs=entSel('con').filter(c=>c.partida===p.id);if(!cs.length)return;
       f+=`<tr class="grp"><td colspan="5">${esc(p.clave)} · ${esc(p.nombre)} · ${cs.length}</td></tr>`;
-      cs.forEach(c=>{f+=`<tr class="${c.nota?'cn':''}"><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td>${esc(c.unidad)}</td>
-        <td class="n">${dec(cdu(c.id))}</td><td class="n">${dec(puVenta(c.id))}</td></tr>`
-        +(c.nota?`<tr class="nt"><td></td><td colspan="4">${esc(c.nota)}</td></tr>`:'');});
+      cs.forEach(c=>{f+=`<tr><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td>
+        <td class="n">${dec(cdu(c.id))}</td><td class="n">${dec(puVenta(c.id))}</td></tr>`;});
     });
     h+=banda('Catálogo de conceptos')+entTbl(
       [['Clave','','56pt'],['Descripción','',''],['Unidad','','40pt'],['Costo directo','n','62pt'],['P. unitario','n','62pt']],f)
       +pie('Catálogo de conceptos')+`</div>`;
   }
+  /* Matrices y generadores salen en hoja horizontal, una por concepto, con
+     su membrete y los croquis en columna a la izquierda. */
+  const bandaLand=t=>`<div class="ent-sec land" id="s${++nsec}">`;
   if(sec.mat){
     const con=entSel('mat');
-    h+=banda('Matrices de precio unitario')+(con.length?con.map(c=>
-      `<div class="ent-blk"><div class="ent-sub">${esc(c.clave)} · por ${esc(c.unidad)}</div>
-       <div class="ent-desc">${esc(c.desc)}</div>
-       ${c.nota?`<div class="ent-desc"><i>${esc(c.nota)}</i></div>`:''}
-       ${entRenglones(db.matrices[c.id])}
-       ${c.notaAnalisis?`<div class="ent-desc"><i>${esc(c.notaAnalisis)}</i></div>`:''}
-       ${entCroq(c.id,'mat')}</div>`).join('')
-      :'<div class="ent-desc">Todavía no hay matrices capturadas.</div>')+pie('Matrices de precio unitario')+`</div>`;
+    h+=bandaLand('Matrices de precio unitario')+(con.length?con.map(entHojaMatriz).join('')
+      :'<div class="ent-desc">Todavía no hay matrices capturadas.</div>')+`</div>`;
   }
   if(sec.gen){
     const con=entSel('gen');
-    h+=banda('Generadores')+(con.length?con.map(c=>{
-      const rows=db.generadores[c.id];
-      const suma=rows.filter(r=>!r.ded).reduce((a,r)=>a+parcialRaw(r),0);
-      const dedu=rows.filter(r=>r.ded).reduce((a,r)=>a+parcialRaw(r),0);
-      return `<div class="ent-blk"><div class="ent-sub">${esc(c.clave)} · resultado en ${esc(c.unidad)}</div>
-       <div class="ent-desc">${esc(c.desc)}</div>
-       ${c.nota?`<div class="ent-desc"><i>${esc(c.nota)}</i></div>`:''}`+entTbl(
-        [['#','','24pt']].concat(db.genCols.map(g=>[g.label,g.t==='num'?'n':'']))
-          .concat([['Unidad','','38pt'],['Subtotal','n','60pt'],['Referencia','','96pt']]),
-        rows.map((r,ix)=>`<tr class="${r.ded?'ded':''}">
-          <td class="n">${ix+1}</td>
-          ${db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${esc((r.v||{})[g.id]??'')}</td>`).join('')}
-          <td>${esc(c.unidad)}</td>
-          <td class="n">${r.ded?'&minus;&nbsp;':''}${dec(parcialRaw(r),3)}</td>
-          <td>${esc((r.v||{}).ref??'')}</td></tr>`).join('')
-        +(dedu?`<tr class="t"><td colspan="${db.genCols.length+2}">Suma</td><td class="n">${dec(suma,3)}</td><td></td></tr>
-           <tr class="t"><td colspan="${db.genCols.length+2}">Deducciones</td><td class="n">&minus;&nbsp;${dec(dedu,3)}</td><td></td></tr>`:'')
-        +`<tr class="t"><td colspan="${db.genCols.length+2}">Cantidad total en ${esc(c.unidad)}</td><td class="n">${dec(cantidad(c.id),3)}</td><td></td></tr>`)
-       +(dedu?`<div class="ent-desc">Los renglones marcados con signo menos son <b>deducciones</b>: se restan en vez de sumarse. Sirven para descontar huecos, vanos o tramos que no llevan el concepto.</div>`:'')
-       +entCroq(c.id,'gen')+`</div>`;}).join('')
-      :'<div class="ent-desc">Todavía no hay generadores capturados.</div>')+pie('Generadores')+`</div>`;
+    h+=bandaLand('Generadores')+(con.length?con.map(entHojaGen).join('')
+      :'<div class="ent-desc">Todavía no hay generadores capturados.</div>')+`</div>`;
   }
   if(sec.ind){
     const r=db.indirectos.rubros||[];
@@ -2081,25 +2196,45 @@ table{width:100%;border-collapse:collapse;font-size:11.5px}
 td{overflow-wrap:anywhere}
 thead th{background:var(--deep);color:#fff;font-size:9.5px;font-weight:600;text-transform:uppercase;
   letter-spacing:.07em;padding:7px 8px;text-align:left}
-td{border-bottom:1px solid var(--line);padding:7px 8px;vertical-align:top}
-tbody tr:nth-child(even) td{background:#FAFCFC}
+thead th{border:1px solid var(--deep)}
+td{border:1px solid #9FB5B5;padding:5px 7px;vertical-align:top}
 td.n,th.n{text-align:right;font-family:'IBM Plex Mono',ui-monospace,monospace;white-space:nowrap}
-tr.t td{background:var(--mint);color:var(--deep);border-top:2px solid var(--deep);border-bottom:0;font-weight:700;font-size:12.5px}
-tr.grp td{background:#E8F2F1;color:var(--deep);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10px;border-top:1px solid var(--teal)}
+td.c,th.c{text-align:center}
+td.r{text-align:right}
+tr.t td{background:var(--deep);color:#fff;font-weight:600}
+tr.s td{background:var(--wash);color:var(--deep);font-weight:600}
+tr.grp td{background:var(--mint);color:var(--deep);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10px}
 tr.grp td.n{font-family:'IBM Plex Mono',ui-monospace,monospace;letter-spacing:0}
 tr.ded td{background:#FBF1EA;color:#8A4E35}
-tr.cn td{border-bottom:0;padding-bottom:1px}
-tr.nt td{font-size:10px;font-style:italic;color:var(--soft);padding:0 8px 7px;line-height:1.4;border-bottom:1px solid var(--line)}
-.ent-croq{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin:10px 0 18px}
-.ent-croq.uno{grid-template-columns:1fr}
-.ent-croq figure{margin:0;border:1px solid var(--mint);padding:8px}
-.ent-croq img{width:100%;height:auto;display:block}
-.ent-croq figcaption{font-size:10px;color:var(--soft);font-style:italic;padding-top:5px}
+.tag{display:inline-block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;padding:1px 6px;border-radius:20px;background:var(--mint);color:#1A6B6B;white-space:nowrap}
+.tag.mat{background:#E3EEF5;color:#2B5F7E}.tag.mo{background:#F5E9E1;color:#A55C3A}.tag.eq{background:#E8EEE4;color:#4A6B3A}
+.tag.pct{background:#EDE7F2;color:#5C4A7E}.tag.aux{background:#DCE9E0;color:#2F6B4A}.tag.cuad{background:#F1E3D9;color:#8A4A28}
+.ent-hoja{margin:26px 0 34px}
+.ent-mem{display:grid;grid-template-columns:150px 1fr 240px;border:1px solid #9FB5B5;margin-bottom:10px;font-size:11.5px}
+.ent-mem .emp{padding:8px;border-right:1px solid #9FB5B5;display:flex;flex-direction:column;justify-content:center}
+.ent-mem .emp b{font-size:15px;color:var(--deep)}
+.ent-mem .tit{display:flex;align-items:center;justify-content:center;text-align:center;font-size:14px;font-weight:600;color:var(--deep);letter-spacing:.06em;text-transform:uppercase;padding:8px}
+.ent-mem .dat{border-left:1px solid #9FB5B5}
+.ent-mem .dat div{display:grid;grid-template-columns:76px 1fr;border-bottom:1px solid #9FB5B5}
+.ent-mem .dat div:last-child{border-bottom:0}
+.ent-mem .dat span{padding:3px 6px}.ent-mem .dat span:first-child{background:var(--wash);color:var(--deep);font-weight:600}
+table.ent-cpt{margin-bottom:10px}
+table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5B5}
+.ent-lado{display:grid;grid-template-columns:34% minmax(0,1fr);gap:12px;align-items:start}
+.ent-lcroq{display:grid;gap:10px}
+.ent-lcroq figure{margin:0;border:1px solid #9FB5B5;padding:6px}
+.ent-lcroq{min-width:0}
+.ent-lcroq img{width:100%;height:auto;display:block;max-height:none!important;object-fit:contain}
+.ent-lcroq figcaption{font-size:10px;color:var(--soft);padding-top:4px}
+.ent-letra{border:1px solid #9FB5B5;border-top:0;margin:-12px 0 12px;padding:4px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--deep)}
+.ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin:34px 30px 0;text-align:center;font-size:11px;color:var(--soft)}
+.ent-firma div{border-top:1px solid var(--ink);padding-top:4px}
 .ent-pie{margin-top:12px;border-top:1px solid var(--mint);padding-top:6px;font-size:10.5px;color:var(--teal);
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:820px){html,body{overflow-x:hidden}.hoja{padding:22px 12px 40px}
   .tw table{min-width:640px}.ent-portada h1{font-size:23px}
-  table{font-size:11px}td,thead th{padding:5px 6px}.ent-croq{grid-template-columns:1fr}
+  table{font-size:11px}td,thead th{padding:5px 6px}.ent-lado{grid-template-columns:minmax(0,1fr)}
+  .ent-mem{grid-template-columns:1fr}.ent-mem .emp,.ent-mem .dat{border:0}.ent-mem .tit{border-top:1px solid #9FB5B5;border-bottom:1px solid #9FB5B5}
   .ent-bloque{grid-template-columns:1fr;gap:2px 0}.ent-bloque b{margin-top:8px}}
 @media print{
   @page{size:letter;margin:13mm 11mm}
@@ -2109,7 +2244,12 @@ tr.nt td{font-size:10px;font-style:italic;color:var(--soft);padding:0 8px 7px;li
   .ent-portada{height:95vh;display:flex;flex-direction:column;page-break-after:always}
   .ent-sec{page-break-before:auto;margin-top:8mm}
   .ent-sec>h2{break-after:avoid;page-break-after:avoid}
-  .ent-blk,.ent-croq figure,tbody tr{break-inside:avoid}
+  .ent-blk,.ent-lcroq figure,tbody tr{break-inside:avoid}
+  @page land{size:letter landscape;margin:7mm 9mm}
+  .ent-sec.land{page:land;margin-top:0}
+  .ent-hoja{margin:0}.ent-hoja+.ent-hoja{break-before:page}
+  .ent-lado{grid-template-columns:34% 1fr!important}
+  .ent-lcroq img{max-height:80mm!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }`;
 function bajarEntregaHTML(solo){
@@ -2208,7 +2348,7 @@ function renderInsumos(){
       <td><div class="ro b" style="text-align:right">${i.tipo==='pct'?'—':dec(r?r.costo:0)}</div></td>
       <td><input value="${esc(i.fuente)}" oninput="upIns('${i.id}','fuente',this.value)" placeholder="Cotización, fecha"></td>
       <td class="act">${btnNota(i.id,'ins',!!i.nota)}${rowBtns(`movIns(${ix},-1)`,`movIns(${ix},1)`,`dupIns(${ix})`,`delIns('${i.id}')`)}</td>
-    </tr>`+((i.nota||notasAbiertas.has(i.id))
+    </tr>`+(notasAbiertas.has(i.id)
       ?`<tr class="nota"><td></td><td class="int"></td><td colspan="7"><textarea class="nota-in" rows="1" data-nota="${i.id}"
           spellcheck="false" placeholder="De dónde sale este precio, qué incluye, con quién se cotizó"
           oninput="upIns('${i.id}','nota',this.value,1);autoAltoNota(this)" onchange="renderInsumos()">${esc(i.nota||'')}</textarea><div class="pr-nota">${esc(i.nota||'')}</div></td><td class="act"></td></tr>`
@@ -2380,7 +2520,7 @@ function renderAux(){
     <button class="btn mini" onclick="dupAuxiliar('${a.id}')" style="flex:0 0 auto;white-space:nowrap">Duplicar básico</button>
     <button class="btn mini" onclick="delAuxiliar('${a.id}')" style="color:var(--terra);border-color:#EBD5CA;flex:0 0 auto">Eliminar básico</button>
   </div>
-  ${notaGral(a.notaGral,`upAux('${a.id}','notaGral',this.value)`)}
+  ${notaGral(a.notaGral,`upAux('${a.id}','notaGral',this.value)`,'g'+a.id,'aux')}
   <div style="padding:0 15px 13px;font-size:10.5px;color:var(--soft);max-width:78ch">Este importe por ${esc(a.unidad)} es <b>costo directo</b>: entra tal cual a la matriz de cualquier concepto que lo use, multiplicado por la cantidad que le toque. Los indirectos y la utilidad no se cargan aquí — se aplican una sola vez, al final, sobre el costo directo del concepto. En los renglones que se miden en tiempo puedes escribir el <b>rendimiento</b> —cuántos ${esc(a.unidad)} salen por jornada o por hora— y la cantidad se calcula sola.</div>`;
 }
 function upAux(id,k,v){const a=db.auxiliares.find(x=>x.id===id);if(!a)return;a[k]=v;save();fillAuxSel();recalc();}
@@ -2535,7 +2675,7 @@ function renderCuad(){
     <button class="btn mini" onclick="dupCuadrilla('${a.id}')" style="flex:0 0 auto;white-space:nowrap">Duplicar cuadrilla</button>
     <button class="btn mini" onclick="delCuadrilla('${a.id}')" style="color:var(--terra);border-color:#EBD5CA;flex:0 0 auto">Eliminar cuadrilla</button>
   </div>
-  ${notaGral(a.notaGral,`upCuad('${a.id}','notaGral',this.value)`)}
+  ${notaGral(a.notaGral,`upCuad('${a.id}','notaGral',this.value)`,'g'+a.id,'cuad')}
   <div style="padding:0 15px 13px;font-size:10.5px;color:var(--soft)">Los cargos porcentuales se capturan en número: 3 son 3% del subtotal de mano de obra. Si esta cuadrilla ya trae herramienta menor, la matriz que la use no debe cargarla otra vez.</div>`;
 }
 function upCuad(id,k,v){const a=(db.cuadrillas||[]).find(x=>x.id===id);if(!a)return;a[k]=v;save();fillCuadSel();recalc();}
@@ -2828,6 +2968,7 @@ function renderGen(){
     </div>
     <button class="btn mini" onclick="togGenTodos()">Ver todos los conceptos</button>
   </div>
+  ${conCroquis(cid,'gen',`
   <div class="tbl-wrap"><table>
     <thead><tr><th style="width:30px" class="mid">#</th><th style="width:78px">Concepto</th>
       ${th}<th style="width:52px" class="mid">Unidad</th><th style="width:88px" class="num">Subtotal</th>
@@ -2848,8 +2989,7 @@ function renderGen(){
              <tr class="sub"><td colspan="${nCols-4}">Deducciones</td><td></td><td class="num mono">&minus;${dec(ded,3)}</td><td colspan="2"></td></tr>`:''}
       <tr class="tot"><td colspan="${nCols-4}">${esc(L('gTotal'))}</td><td class="mid">${esc(c.unidad)}</td><td class="num mono" id="genTot">${dec(cantidad(cid),3)}</td><td colspan="2"></td></tr>
     </tbody></table></div>
-  <div style="padding:9px 11px"><button class="btn ghost" onclick="addGen('${cid}')">+ Agregar renglón · Enter también</button></div>
-  ${croqBox(cid,'gen')}
+  <div style="padding:9px 11px"><button class="btn ghost" onclick="addGen('${cid}')">+ Agregar renglón · Enter también</button></div>`)}
   <div class="hint">Eje y tramo son texto y no entran al cálculo. El subtotal multiplica piezas × largo × ancho × alto, y las casillas vacías valen 1. El botón &minus; convierte el renglón en deducción. Con <b>abc/123</b> cambias una columna de texto a número, y con su título la renombras.</div>`;
 }
 
@@ -2926,6 +3066,13 @@ function croqBox(cid,b){
       </figure>`).join('')}</div>`
     :`<div class="croq-vacio">${esc(vacio)}</div>`}
   </div>`;
+}
+/* Con croquis, la caja va en una columna a la izquierda de la tabla; sin
+   croquis, la tabla ocupa todo el ancho y la caja para subirlos va abajo. */
+function conCroquis(cid,b,main){
+  return croqDe(cid,b).length
+    ?`<div class="lado"><div class="lado-croq">${croqBox(cid,b)}</div><div class="lado-main">${main}</div></div>`
+    :main+croqBox(cid,b);
 }
 function croqDrop(ev,cid,b){
   ev.preventDefault();ev.currentTarget.classList.remove('drag');
@@ -3057,6 +3204,7 @@ function renderMatriz(){
     <div style="font-size:8.5px;letter-spacing:.11em;text-transform:uppercase;color:var(--soft)">${esc(c.clave)} · por ${esc(c.unidad)}</div>
     <div class="desc-larga">${esc(c.desc)}</div>
   </div>
+  ${conCroquis(cid,'mat',`
   <div class="tbl-wrap"><table>
     <thead><tr><th style="width:76px">${eh('mClave')}</th><th>${eh('mInsumo')}</th>
       <th style="width:54px" class="mid">${eh('mUnidad')}</th>
@@ -3093,9 +3241,8 @@ function renderMatriz(){
       <div class="kpi"><small>Cantidad generada</small><b>${dec(cantidad(cid),3)}</b></div>
     </div>
     <div style="font-size:10.5px;color:var(--soft);margin-top:9px">Los porcentajes no se capturan aquí: salen de <span class="lnk" onclick="go('indirectos')">Indirectos</span> y de <span class="lnk" onclick="go('cargos')">Utilidad y cargos</span>, y son los mismos para toda la obra.</div>
-  </div>
-  ${croqBox(cid,'mat')}
-  ${notaGral(c.notaAnalisis,`setNotaAnalisis('${cid}',this.value)`)}`;
+  </div>`)}
+  ${notaGral(c.notaAnalisis,`setNotaAnalisis('${cid}',this.value)`,'g'+cid,'matriz')}`;
 }
 /* Quita los cargos porcentuales que la matriz carga por fuera cuando la
    cuadrilla ya los trae adentro. Solo se ejecuta si tú le das al botón. */

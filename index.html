@@ -2106,7 +2106,10 @@ function entHojaGen(c){
   const suma=rows.filter(r=>!r.ded).reduce((a,r)=>a+parcialRaw(r),0);
   const dedu=rows.filter(r=>r.ded).reduce((a,r)=>a+parcialRaw(r),0);
   const tabla=entTbl(
-    [['#','c','20pt']].concat(db.genCols.map(g=>[g.label,g.t==='num'?'n':''])).concat([['Parcial','n','58pt'],['Referencia','','90pt']]),
+    /* columnas de números angostas y de texto corto medianas; la referencia,
+       que es texto libre, se queda con el resto del ancho */
+    [['#','c','18pt']].concat(db.genCols.map(g=>[g.label,g.t==='num'?'n':'',g.t==='num'?'44pt':'56pt']))
+      .concat([['Parcial','n','54pt'],['Referencia','','']]),
     rows.map((r,ix)=>`<tr class="${r.ded?'ded':''}"><td class="c">${ix+1}</td>
       ${db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${esc((r.v||{})[g.id]??'')}</td>`).join('')}
       <td class="n">${r.ded?'&minus;&nbsp;':''}${dec(parcialRaw(r),3)}</td><td>${esc((r.v||{}).ref??'')}</td></tr>`).join('')

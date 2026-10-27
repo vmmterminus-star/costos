@@ -441,6 +441,20 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc .ent-hoja td{padding:1.4pt 3pt}
   #entregaDoc .ent-hoja thead th{padding:2pt 3pt!important}
   #entregaDoc .ent-hoja tr.t td{font-size:7.2pt}
+  /* generador con el formato de las estimaciones */
+  #entregaDoc .ent-genbox{border:.6pt solid #123C47;border-radius:2.5mm;overflow:hidden;margin-bottom:3mm}
+  #entregaDoc table.ent-gen{margin:0;table-layout:fixed}
+  #entregaDoc table.ent-gen thead th{border:0!important;border-left:.4pt solid #3D8A8A!important}
+  #entregaDoc table.ent-gen thead th:first-child{border-left:0!important}
+  #entregaDoc table.ent-gen td{border:0!important;border-left:.4pt solid #9FB5B5!important;
+    border-bottom:.4pt dashed #9FB5B5!important;height:4.3mm;padding:.6pt 3pt}
+  #entregaDoc table.ent-gen td.gcon{border-bottom:0!important;vertical-align:top;text-align:justify;
+    padding:2mm 2.5mm!important;line-height:1.35;font-size:6.6pt}
+  #entregaDoc table.ent-gen td.gcon b{display:block;color:#123C47;margin-bottom:1.5mm;font-family:'IBM Plex Mono',monospace}
+  #entregaDoc table.ent-gen td.gcon,#entregaDoc table.ent-gen td.g0{border-left:0!important}
+  #entregaDoc table.ent-gen tr.gpie td,#entregaDoc table.ent-gen tr.t td{border-top:.6pt solid #123C47!important;border-bottom:0!important}
+  #entregaDoc table.ent-gen tr.gpie td{background:#F4F9F9!important;color:#123C47!important;font-weight:600}
+  #entregaDoc table.ent-gen tr.t td{border-left-color:#123C47!important}
   /* hoja de croquis: medidas en mm que calcula croqAcomodo() */
   #entregaDoc .ent-cqhoja{break-inside:avoid}
   #entregaDoc .ent-cqcon{display:flex;gap:3mm;border:.4pt solid #9FB5B5;padding:1.2mm 2mm;margin-bottom:3mm;font-size:6.8pt;
@@ -2105,21 +2119,28 @@ function entHojaGen(c){
   const rows=db.generadores[c.id]||[],nc=db.genCols.length+1;
   const suma=rows.filter(r=>!r.ded).reduce((a,r)=>a+parcialRaw(r),0);
   const dedu=rows.filter(r=>r.ded).reduce((a,r)=>a+parcialRaw(r),0);
-  const tabla=entTbl(
-    /* columnas de números angostas y de texto corto medianas; la referencia,
-       que es texto libre, se queda con el resto del ancho */
-    [['#','c','18pt']].concat(db.genCols.map(g=>[g.label,g.t==='num'?'n':'',g.t==='num'?'44pt':'56pt']))
-      .concat([['Parcial','n','54pt'],['Referencia','','']]),
-    rows.map((r,ix)=>`<tr class="${r.ded?'ded':''}"><td class="c">${ix+1}</td>
-      ${db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${esc((r.v||{})[g.id]??'')}</td>`).join('')}
-      <td class="n">${r.ded?'&minus;&nbsp;':''}${dec(parcialRaw(r),3)}</td><td>${esc((r.v||{}).ref??'')}</td></tr>`).join('')
-    +(dedu?`<tr class="s"><td colspan="${nc}" class="r">Suma</td><td class="n">${dec(suma,3)}</td><td></td></tr>
-       <tr class="s"><td colspan="${nc}" class="r">Deducciones</td><td class="n">&minus;&nbsp;${dec(dedu,3)}</td><td></td></tr>`:'')
-    +`<tr class="t"><td colspan="${nc}" class="r">Total en ${esc(c.unidad)}</td><td class="n">${dec(cantidad(c.id),3)}</td><td></td></tr>`)
+  /* Formato de las estimaciones: el concepto va en una columna a la
+     izquierda que abarca todos los renglones, y la tabla se rellena con
+     renglones vacíos hasta completar la hoja. Columnas de números
+     angostas; la referencia, que es texto libre, se queda con el resto. */
+  const GEN_FILAS=33,nf=Math.max(GEN_FILAS,rows.length);
+  const celdas=r=>db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${r?esc((r.v||{})[g.id]??''):''}</td>`).join('')
+    +`<td class="c">${r?esc(c.unidad):''}</td>`
+    +`<td class="n">${r?(r.ded?'&minus;&nbsp;':'')+dec(parcialRaw(r),3):''}</td><td>${r?esc((r.v||{}).ref??''):''}</td>`;
+  let cuerpo='';
+  for(let i=0;i<nf;i++){const r=rows[i];
+    cuerpo+=`<tr class="${r&&r.ded?'ded':''}">${i===0?`<td class="gcon" rowspan="${nf}"><b>${esc(c.clave)}</b><br>${esc(c.desc)}</td>`:''}${celdas(r)}</tr>`;}
+  const pie=(l,v,u)=>`<tr class="gpie"><td class="g0"></td><td colspan="${nc}" class="r">${l}</td><td class="n">${v}</td><td>${u}</td></tr>`;
+  const tabla=`<div class="ent-genbox"><table class="ent-gen">
+    <thead><tr><th style="width:27%">Concepto</th>${db.genCols.map(g=>`<th class="${g.t==='num'?'n':''}" style="width:${g.t==='num'?'40pt':'50pt'}">${esc(g.label)}</th>`).join('')}
+      <th class="c" style="width:24pt">U.</th><th class="n" style="width:50pt">Subtotal</th><th>Referencia</th></tr></thead>
+    <tbody>${cuerpo}
+      ${dedu?pie('Suma',dec(suma,3),'')+pie('Deducciones','&minus;&nbsp;'+dec(dedu,3),''):''}
+      <tr class="t"><td class="g0"></td><td colspan="${nc}" class="r">Total generador:</td><td class="n">${dec(cantidad(c.id),3)}</td><td>${esc(c.unidad)}</td></tr>
+    </tbody></table></div>`
     +`<div class="ent-firma"><div>Elaboró</div><div>Revisó</div></div>`;
   return entHojasCroquis(c,'gen','Croquis · número generador')
-    +`<div class="ent-hoja">${entMembrete('Número generador')}
-    ${entConcepto(c,'Total',dec(cantidad(c.id),3))+tabla}</div>`;
+    +`<div class="ent-hoja">${entMembrete('Número generador')}${tabla}</div>`;
 }
 /* Con un argumento —'ins', 'pre', 'mat'…— arma el documento con esa sola
    sección, pero con la misma portada y el mismo membrete: sirve para
@@ -2324,6 +2345,13 @@ table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5
 .ent-letra{border:1px solid #9FB5B5;border-top:0;margin:-12px 0 12px;padding:4px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--deep)}
 .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin:34px 30px 0;text-align:center;font-size:11px;color:var(--soft)}
 .ent-firma div{border-top:1px solid var(--ink);padding-top:4px}
+.ent-genbox{border:1px solid var(--deep);border-radius:8px;overflow-x:auto;margin-bottom:12px}
+.ent-genbox .tw{margin:0}
+table.ent-gen td{border:0;border-left:1px solid #9FB5B5;border-bottom:1px dashed #9FB5B5;height:18px}
+table.ent-gen td.gcon,table.ent-gen td.g0{border-left:0}
+table.ent-gen td.gcon{border-bottom:0;vertical-align:top;text-align:justify;min-width:180px;font-size:11px}
+table.ent-gen td.gcon b{display:block;color:var(--deep);margin-bottom:6px}
+table.ent-gen tr.gpie td{background:var(--wash);color:var(--deep);font-weight:600;border-top:1px solid var(--deep)}
 .ent-pie{margin-top:12px;border-top:1px solid var(--mint);padding-top:6px;font-size:10.5px;color:var(--teal);
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:820px){html,body{overflow-x:hidden}.hoja{padding:22px 12px 40px}

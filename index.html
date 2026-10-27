@@ -441,12 +441,19 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc .ent-hoja td{padding:1.4pt 3pt}
   #entregaDoc .ent-hoja thead th{padding:2pt 3pt!important}
   #entregaDoc .ent-hoja tr.t td{font-size:7.2pt}
-  #entregaDoc .ent-lado{display:grid;grid-template-columns:31% 1fr;gap:3.5mm;align-items:start}
-  #entregaDoc .ent-lmain{min-width:0}
-  #entregaDoc .ent-lcroq{display:grid;gap:3mm}
-  #entregaDoc .ent-lcroq figure{margin:0;border:.4pt solid #9FB5B5;padding:1.5mm;break-inside:avoid}
-  #entregaDoc .ent-lcroq img{width:100%;height:auto;max-height:165mm;object-fit:contain;display:block}
-  #entregaDoc .ent-lcroq figcaption{font-size:6.3pt;color:#5A6E74;padding-top:1mm}
+  /* hoja de croquis: medidas en mm que calcula croqAcomodo() */
+  #entregaDoc .ent-cqhoja{break-inside:avoid}
+  #entregaDoc .ent-cqcon{display:flex;gap:3mm;border:.4pt solid #9FB5B5;padding:1.2mm 2mm;margin-bottom:3mm;font-size:6.8pt;
+    white-space:nowrap;overflow:hidden}
+  #entregaDoc .ent-cqcon b{color:#123C47;font-family:'IBM Plex Mono',monospace}
+  #entregaDoc .ent-cqcon span{overflow:hidden;text-overflow:ellipsis;color:#1F3339}
+  #entregaDoc .ent-cqarea{display:flex;flex-direction:column;align-items:center;gap:4mm}
+  #entregaDoc .ent-cqfila{display:flex;justify-content:center;gap:4mm}
+  #entregaDoc .ent-cqarea.cols{flex-direction:row;justify-content:center;align-items:center}
+  #entregaDoc .ent-cqarea.cols .ent-cqfila{flex-direction:column;align-items:center}
+  #entregaDoc .ent-cqfila figure{margin:0}
+  #entregaDoc .ent-cqfila img{display:block;object-fit:contain}
+  #entregaDoc .ent-cqfila figcaption{height:4mm;font-size:6.3pt;color:#5A6E74;padding-top:.8mm;overflow:hidden;white-space:nowrap;text-overflow:ellipsis}
   #entregaDoc .ent-letra{border:.4pt solid #9FB5B5;border-top:0;margin-top:-3mm;margin-bottom:3mm;padding:2pt 4pt;
     text-align:center;font-size:7pt;font-weight:600;color:#123C47}
   #entregaDoc .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:20mm;margin:10mm 8mm 0;text-align:center;font-size:7pt;color:#5A6E74}
@@ -1874,6 +1881,7 @@ function entListaHTML(k){
 }
 function renderEntrega(){
   const box=document.getElementById('entregaBody');if(!box)return;
+  croqMedir();   /* mide los croquis de antemano: al imprimir ya están listos */
   const e=entCfg(),o=db.obra;
   const f=(k,l,ph)=>`<div class="f"><label>${esc(l)}</label>
     <input class="f-in" value="${esc(o[k]||'')}" placeholder="${esc(ph||'')}" oninput="upObra('${k}',this.value)"></div>`;
@@ -1977,16 +1985,95 @@ function entConcepto(c,etq,valor){
   return `<table class="ent-cpt"><tr><th style="width:52pt">Clave</th><th>Concepto</th><th style="width:30pt">Unidad</th><th style="width:54pt">${esc(etq)}</th></tr>
     <tr><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td><td class="n">${valor}</td></tr></table>`;
 }
-/* Croquis en columna a la izquierda; si el concepto no tiene, la tabla va a todo lo ancho. */
-function entLado(cid,b,main){
-  const cs=croqDe(cid,b);
-  if(!cs.length)return main;
-  /* los croquis se reparten el alto de la hoja horizontal para no empujar
-     la columna a una segunda página */
-  const alto=Math.floor((170-(cs.length-1)*5)/cs.length);
-  return `<div class="ent-lado"><div class="ent-lcroq">${cs.map(k=>
-    `<figure><img src="${k.src}" alt="Croquis" style="max-height:${alto}mm">${k.nota?`<figcaption>${esc(k.nota)}</figcaption>`:''}</figure>`).join('')}</div>
-    <div class="ent-lmain">${main}</div></div>`;
+/* ------------------------------------------------------------------
+   HOJAS DE CROQUIS
+   Como en las estimaciones: antes de la tabla de cada matriz y de cada
+   generador va su hoja de croquis. Los croquis se acomodan según su
+   forma: los alargados van a todo lo ancho, uno debajo de otro; los altos
+   van lado a lado. Se prueban todos los acomodos posibles —qué croquis
+   comparten renglón y cuáles pasan a otra hoja— y gana el de menos hojas
+   en el que ningún croquis queda a menos de 55% de su tamaño máximo.
+   ------------------------------------------------------------------ */
+const CROQ_R=new Map();             /* forma de cada imagen: ancho ÷ alto */
+const croqForma=k=>CROQ_R.get(k.src)||1.4;
+/* Mide las imágenes que falten. Son data URL, así que tarda un instante. */
+function croqMedir(){
+  const todas=[...Object.values(db.croquis||{}),...Object.values(db.croquisMat||{})].flat()
+    .filter(k=>k&&k.src&&!CROQ_R.has(k.src));
+  return Promise.all(todas.map(k=>new Promise(ok=>{
+    const im=new Image();
+    im.onload=()=>{if(im.naturalWidth&&im.naturalHeight)CROQ_R.set(k.src,im.naturalWidth/im.naturalHeight);ok();};
+    im.onerror=()=>ok();
+    im.src=k.src;
+  })));
+}
+/* Espacio útil de la hoja horizontal para los croquis, en mm, ya sin el
+   membrete ni el renglón del concepto. Cada renglón reserva lugar para
+   la nota del croquis. */
+const CQ_W=258,CQ_H=168,CQ_GAP=4,CQ_PIE=4;
+const cqSolo=x=>Math.min(CQ_H-CQ_PIE,CQ_W/x.r);   /* alto que tendría sola en su hoja */
+/* Una hoja se puede armar en renglones (los croquis de un grupo van lado a
+   lado y los grupos uno debajo de otro) o en columnas (los de un grupo van
+   apilados y los grupos lado a lado). Devuelve el tamaño de cada croquis. */
+function cqHoja(grupos,modo){
+  if(modo==='f'){
+    let hs=grupos.map(g=>Math.min(CQ_H-CQ_PIE,(CQ_W-CQ_GAP*(g.length-1))/g.reduce((s,x)=>s+x.r,0)));
+    const libre=CQ_H-CQ_GAP*(grupos.length-1)-CQ_PIE*grupos.length,suma=hs.reduce((a,b)=>a+b,0);
+    if(suma>libre)hs=hs.map(h=>h*libre/suma);
+    return grupos.map((g,i)=>g.map(x=>({...x,h:hs[i],w:hs[i]*x.r})));
+  }
+  let ws=grupos.map(g=>Math.min(CQ_W,(CQ_H-CQ_GAP*(g.length-1)-CQ_PIE*g.length)/g.reduce((s,x)=>s+1/x.r,0)));
+  const libre=CQ_W-CQ_GAP*(grupos.length-1),suma=ws.reduce((a,b)=>a+b,0);
+  if(suma>libre)ws=ws.map(w=>w*libre/suma);
+  return grupos.map((g,i)=>g.map(x=>({...x,w:ws[i],h:ws[i]/x.r})));
+}
+/* qué tan grande queda cada croquis contra su tamaño máximo */
+const cqNota=hoja=>{const es=hoja.flat().map(x=>x.h/cqSolo(x));
+  return {min:Math.min(...es),suma:es.reduce((a,b)=>a+b,0)};};
+function croqAcomodo(cs){
+  const ks=cs.map(k=>({k,r:croqForma(k)}));
+  let mejor=null;
+  const prueba=paginas=>{
+    let minE=1,sumE=0;
+    const out=paginas.map(grupos=>{
+      const f=cqHoja(grupos,'f'),c=cqHoja(grupos,'c'),nf=cqNota(f),nc=cqNota(c);
+      const usaC=nc.min>=0.55&&nf.min>=0.55?nc.suma>nf.suma:nc.min>nf.min;
+      const n=usaC?nc:nf;minE=Math.min(minE,n.min);sumE+=n.suma;
+      return {modo:usaC?'c':'f',grupos:usaC?c:f};});
+    const cand={out,n:paginas.length,ok:minE>=0.55,minE,prom:sumE/ks.length};
+    const gana=(a,b)=>a.ok!==b.ok?a.ok:a.ok?(a.n!==b.n?a.n<b.n:a.prom>b.prom):a.minE>b.minE;
+    if(!mejor||gana(cand,mejor))mejor=cand;
+  };
+  /* entre cada par de croquis hay tres opciones: mismo grupo, grupo nuevo
+     u hoja nueva. Con muchos croquis se acomodan de seis en seis. */
+  const recorre=lista=>{
+    mejor=null;
+    const n=lista.length,total=Math.pow(3,n-1);
+    for(let m=0;m<total;m++){
+      const paginas=[[[lista[0]]]];let x=m;
+      for(let i=1;i<n;i++){const d=x%3;x=Math.floor(x/3);
+        const pag=paginas[paginas.length-1];
+        if(d===0)pag[pag.length-1].push(lista[i]);
+        else if(d===1)pag.push([lista[i]]);
+        else paginas.push([[lista[i]]]);}
+      prueba(paginas);
+    }
+    return mejor.out;
+  };
+  let res=[];
+  for(let i=0;i<ks.length;i+=6)res=res.concat(recorre(ks.slice(i,i+6)));
+  return res;
+}
+function entHojasCroquis(c,b,titulo){
+  const cs=croqDe(c.id,b);
+  if(!cs.length)return '';
+  const fig=x=>`<figure style="width:${x.w.toFixed(1)}mm">
+      <img src="${x.k.src}" alt="Croquis" style="width:${x.w.toFixed(1)}mm;height:${x.h.toFixed(1)}mm">
+      <figcaption>${esc(x.k.nota||'')}</figcaption></figure>`;
+  return croqAcomodo(cs).map(p=>`<div class="ent-hoja ent-cqhoja">${entMembrete(titulo)}
+    <div class="ent-cqcon"><b>${esc(c.clave)}</b><span>${esc(c.descCorta||c.desc)}</span></div>
+    <div class="ent-cqarea ${p.modo==='c'?'cols':''}">${p.grupos.map(g=>
+      `<div class="ent-cqfila">${g.map(fig).join('')}</div>`).join('')}</div></div>`).join('');
 }
 function entHojaMatriz(c){
   const m=calcRows(db.matrices[c.id]||[]);
@@ -2010,8 +2097,9 @@ function entHojaMatriz(c){
     +cargo('Cargos adicionales',ca,cd*(1+pI)*(1+ui)*(1+fin)*ca)
     +`<tr class="t"><td colspan="5" class="r">Precio unitario por ${esc(c.unidad)}</td><td class="n">${dec(pu)}</td></tr>`)
     +`<div class="ent-letra">${numLetras(pu)}</div>`;
-  return `<div class="ent-hoja">${entMembrete('Análisis de precio unitario')}
-    ${entLado(c.id,'mat',entConcepto(c,'Cantidad',dec(cantidad(c.id),3))+tabla)}</div>`;
+  return entHojasCroquis(c,'mat','Croquis · análisis de precio unitario')
+    +`<div class="ent-hoja">${entMembrete('Análisis de precio unitario')}
+    ${entConcepto(c,'Cantidad',dec(cantidad(c.id),3))+tabla}</div>`;
 }
 function entHojaGen(c){
   const rows=db.generadores[c.id]||[],nc=db.genCols.length+1;
@@ -2026,8 +2114,9 @@ function entHojaGen(c){
        <tr class="s"><td colspan="${nc}" class="r">Deducciones</td><td class="n">&minus;&nbsp;${dec(dedu,3)}</td><td></td></tr>`:'')
     +`<tr class="t"><td colspan="${nc}" class="r">Total en ${esc(c.unidad)}</td><td class="n">${dec(cantidad(c.id),3)}</td><td></td></tr>`)
     +`<div class="ent-firma"><div>Elaboró</div><div>Revisó</div></div>`;
-  return `<div class="ent-hoja">${entMembrete('Número generador')}
-    ${entLado(c.id,'gen',entConcepto(c,'Total',dec(cantidad(c.id),3))+tabla)}</div>`;
+  return entHojasCroquis(c,'gen','Croquis · número generador')
+    +`<div class="ent-hoja">${entMembrete('Número generador')}
+    ${entConcepto(c,'Total',dec(cantidad(c.id),3))+tabla}</div>`;
 }
 /* Con un argumento —'ins', 'pre', 'mat'…— arma el documento con esa sola
    sección, pero con la misma portada y el mismo membrete: sirve para
@@ -2220,12 +2309,15 @@ tr.ded td{background:#FBF1EA;color:#8A4E35}
 .ent-mem .dat span{padding:3px 6px}.ent-mem .dat span:first-child{background:var(--wash);color:var(--deep);font-weight:600}
 table.ent-cpt{margin-bottom:10px}
 table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5B5}
-.ent-lado{display:grid;grid-template-columns:34% minmax(0,1fr);gap:12px;align-items:start}
-.ent-lcroq{display:grid;gap:10px}
-.ent-lcroq figure{margin:0;border:1px solid #9FB5B5;padding:6px}
-.ent-lcroq{min-width:0}
-.ent-lcroq img{width:100%;height:auto;display:block;max-height:none!important;object-fit:contain}
-.ent-lcroq figcaption{font-size:10px;color:var(--soft);padding-top:4px}
+.ent-cqcon{display:flex;gap:10px;border:1px solid #9FB5B5;padding:4px 8px;margin-bottom:10px;font-size:11px}
+.ent-cqcon b{color:var(--deep);font-family:'IBM Plex Mono',ui-monospace,monospace;white-space:nowrap}
+.ent-cqarea{display:flex;flex-direction:column;align-items:center;gap:12px}
+.ent-cqfila{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:100%}
+.ent-cqarea.cols{flex-direction:row;flex-wrap:wrap;justify-content:center}
+.ent-cqarea.cols .ent-cqfila{flex-direction:column;align-items:center}
+.ent-cqfila figure{margin:0;max-width:100%}
+.ent-cqfila img{display:block;max-width:100%;height:auto!important;object-fit:contain}
+.ent-cqfila figcaption{font-size:10px;color:var(--soft);padding-top:4px}
 .ent-letra{border:1px solid #9FB5B5;border-top:0;margin:-12px 0 12px;padding:4px 6px;text-align:center;font-size:11px;font-weight:600;color:var(--deep)}
 .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:60px;margin:34px 30px 0;text-align:center;font-size:11px;color:var(--soft)}
 .ent-firma div{border-top:1px solid var(--ink);padding-top:4px}
@@ -2233,7 +2325,7 @@ table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5
   display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:820px){html,body{overflow-x:hidden}.hoja{padding:22px 12px 40px}
   .tw table{min-width:640px}.ent-portada h1{font-size:23px}
-  table{font-size:11px}td,thead th{padding:5px 6px}.ent-lado{grid-template-columns:minmax(0,1fr)}
+  table{font-size:11px}td,thead th{padding:5px 6px}
   .ent-mem{grid-template-columns:1fr}.ent-mem .emp,.ent-mem .dat{border:0}.ent-mem .tit{border-top:1px solid #9FB5B5;border-bottom:1px solid #9FB5B5}
   .ent-bloque{grid-template-columns:1fr;gap:2px 0}.ent-bloque b{margin-top:8px}}
 @media print{
@@ -2244,17 +2336,16 @@ table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5
   .ent-portada{height:95vh;display:flex;flex-direction:column;page-break-after:always}
   .ent-sec{page-break-before:auto;margin-top:8mm}
   .ent-sec>h2{break-after:avoid;page-break-after:avoid}
-  .ent-blk,.ent-lcroq figure,tbody tr{break-inside:avoid}
+  .ent-blk,.ent-cqhoja,tbody tr{break-inside:avoid}
   @page land{size:letter landscape;margin:7mm 9mm}
   .ent-sec.land{page:land;margin-top:0}
   .ent-hoja{margin:0}.ent-hoja+.ent-hoja{break-before:page}
-  .ent-lado{grid-template-columns:34% 1fr!important}
-  .ent-lcroq img{max-height:80mm!important}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
 }`;
-function bajarEntregaHTML(solo){
+async function bajarEntregaHTML(solo){
   const e=entCfg();
   if(!solo&&!ENT_SEC.some(([k])=>e.sec[k])){alert('Marca al menos una sección.');return;}
+  await croqMedir();
   const o=db.obra;
   const hoy=new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
   const tit=`${o.nombre||'Presupuesto'} — entrega`;
@@ -2277,9 +2368,10 @@ function bajarEntregaHTML(solo){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
   flash('HTML de entrega descargado · '+Math.round(doc.length/1024)+' KB');
 }
-function imprimirEntrega(solo){
+async function imprimirEntrega(solo){
   const e=entCfg();
   if(!solo&&!ENT_SEC.some(([k])=>e.sec[k])){alert('Marca al menos una sección.');return;}
+  await croqMedir();
   const box=document.getElementById('entregaDoc');
   box.innerHTML=entregaHTML(solo);
   document.body.classList.add('entrega');

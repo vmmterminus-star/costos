@@ -302,7 +302,8 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
 .print-hd{display:none}
 .print-ft{display:none}
 @media print{
-  @page{size:letter;margin:13mm 11mm}
+  /* margen ancho a la izquierda para el engargolado, y número de hoja abajo */
+  @page{size:letter;margin:12mm 11mm 12mm 22mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   body{background:#fff;font-size:8pt}
   header,nav,.dock,details.help,.hint,button,.panel-hd .sub,.kpis,.act,th.act,.leg,.prog,.sem,.avisos,.croq-hd,.croq-vacio,.lightbox,.rev-box{display:none!important}
   tr.rev-row{display:none!important}
@@ -374,24 +375,26 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
      print-color-adjust obliga al navegador a respetar los fondos. */
   #entregaDoc,#entregaDoc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   #entregaDoc{color:#1F3339}
-  #entregaDoc .ent-portada{height:95vh;display:flex;flex-direction:column;page-break-after:always;
-    border-top:3mm solid #123C47;border-bottom:.6pt solid #3D8A8A;padding:12mm 2mm 8mm}
-  #entregaDoc .ent-portada h1{font-size:26pt;font-weight:600;letter-spacing:-.02em;color:#123C47;margin:0 0 2mm}
-  #entregaDoc .ent-portada .sub{font-size:11pt;color:#3D8A8A;margin-bottom:12mm;max-width:130mm;line-height:1.4}
-  #entregaDoc .ent-bloque{display:grid;grid-template-columns:auto 1fr;gap:1.6mm 7mm;font-size:9pt;
-    margin-bottom:9mm;background:#F4F9F9;padding:4mm 5mm;border-left:1mm solid #D8ECEA}
-  #entregaDoc .ent-bloque b{font-weight:600;color:#123C47;white-space:nowrap}
-  #entregaDoc .ent-rot{font-size:7.5pt;letter-spacing:.14em;text-transform:uppercase;color:#3D8A8A;
-    border-bottom:.5pt solid #D8ECEA;padding-bottom:1.2mm;margin-bottom:3mm}
-  /* Todo va apilado: las secciones no arrancan en hoja nueva, se separan
-     con una banda con su número y su nombre. Solo la portada va sola. */
-  #entregaDoc .ent-sec{margin-top:8mm}
-  #entregaDoc .ent-sec:first-of-type{margin-top:0}
-  #entregaDoc .ent-sec>h2{background:#123C47!important;color:#fff!important;font-size:11pt;
-    font-weight:600;letter-spacing:.02em;margin:0 0 4mm;padding:2.8mm 4mm;border:0;
-    break-after:avoid;page-break-after:avoid}
-  #entregaDoc .ent-sec>h2 span{color:#7FB8B4!important;font-family:'IBM Plex Mono',monospace;
-    font-size:9.5pt;margin-right:3mm}
+  /* portada: ocupa la hoja vertical completa (alto útil de la carta) */
+  #entregaDoc .ent-portada{height:250mm;display:flex;flex-direction:column;page-break-after:always;
+    border-top:3mm solid #123C47;padding:9mm 4mm 2mm}
+  #entregaDoc .pt-esc{font-size:8pt;letter-spacing:.16em;text-transform:uppercase;color:#3D8A8A;text-align:center}
+  #entregaDoc .pt-mat{font-size:12pt;font-weight:500;color:#123C47;text-align:center;margin-top:1.5mm}
+  #entregaDoc .pt-centro{margin:auto 0;text-align:center}
+  #entregaDoc .pt-doc{font-size:9pt;letter-spacing:.16em;text-transform:uppercase;color:#3D8A8A;margin-bottom:4mm}
+  #entregaDoc .ent-portada h1{font-size:38pt;font-weight:600;letter-spacing:-.02em;color:#123C47;margin:0;line-height:1.05}
+  #entregaDoc .pt-lin{width:22mm;height:.8mm;background:#C47A5A!important;margin:6mm auto}
+  #entregaDoc .pt-ub{font-size:10pt;color:#5A6E74}
+  #entregaDoc .pt-pie{display:grid;grid-template-columns:1fr 1fr;gap:3mm 10mm;font-size:9pt;color:#1F3339;
+    border-top:.6pt solid #D8ECEA;padding-top:5mm}
+  #entregaDoc .pt-pie b{display:block;font-size:6.5pt;letter-spacing:.14em;text-transform:uppercase;color:#3D8A8A;font-weight:500}
+  /* hoja separadora de cada sección: con menos peso que la portada */
+  #entregaDoc .ent-sep{height:250mm;display:flex;flex-direction:column;align-items:center;justify-content:center;
+    text-align:center;break-before:page;page-break-before:always;break-after:page;page-break-after:always}
+  #entregaDoc .ent-sep .n{font-family:'IBM Plex Mono',monospace;font-size:64pt;color:#D8ECEA;line-height:1}
+  #entregaDoc .ent-sep .t{font-size:20pt;font-weight:600;color:#123C47;margin-top:3mm}
+  #entregaDoc .ent-sep .l{width:16mm;height:.6mm;background:#C47A5A!important;margin:5mm 0}
+  #entregaDoc .ent-sep .d{font-size:9pt;color:#5A6E74}
   #entregaDoc .ent-sub{font-size:9pt;font-weight:600;color:#123C47;margin:5mm 0 1.5mm;page-break-after:avoid}
   #entregaDoc .ent-desc{font-size:7pt;color:#5A6E74;margin:0 0 1.8mm;line-height:1.38}
   #entregaDoc .tw{overflow:visible}
@@ -405,6 +408,15 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc td.c,#entregaDoc th.c{text-align:center}
   #entregaDoc td.r{text-align:right}
   #entregaDoc tr.ded td{background:#FBF1EA!important;color:#8A4E35!important}
+  #entregaDoc tr.cero td{color:#9AABAF!important}
+  /* tabla que envuelve cada sección vertical: su encabezado es el membrete */
+  #entregaDoc table.ent-wrap{margin:0;font-size:inherit}
+  #entregaDoc table.ent-wrap>thead>tr>td,#entregaDoc table.ent-wrap>tbody>tr>td{border:0!important;padding:0!important;background:none!important}
+  #entregaDoc table.ent-wrap>thead>tr>td{padding-bottom:1mm!important}
+  #entregaDoc table.ent-wrap>tbody>tr{break-inside:auto!important;page-break-inside:auto!important}
+  /* cada sección empieza en hoja nueva, y un subtítulo de grupo nunca se queda solo al pie */
+  #entregaDoc .ent-sec{break-before:page;page-break-before:always;margin-top:0!important}
+  #entregaDoc tr.grp{break-after:avoid;page-break-after:avoid}
   #entregaDoc tr.t td{background:#123C47!important;color:#fff!important;font-weight:600;font-size:8pt}
   #entregaDoc tr.s td{background:#F4F9F9!important;color:#123C47!important;font-weight:600}
   #entregaDoc tr.grp td{background:#D8ECEA!important;color:#123C47!important;font-weight:600;
@@ -419,7 +431,8 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc .tag.cuad{background:#F1E3D9!important;color:#8A4A28!important}
   #entregaDoc .ent-blk{break-inside:avoid}
   /* hojas horizontales de matriz y generador */
-  @page land{size:letter landscape;margin:7mm 9mm}
+  /* la hoja horizontal se engargola por arriba: ahí va el margen ancho */
+  @page land{size:letter landscape;margin:13mm 9mm 8mm 9mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   #entregaDoc .ent-sec.land{page:land;margin-top:0}
   #entregaDoc .ent-hoja+.ent-hoja,#entregaDoc .ent-sec.land+.ent-sec.land{break-before:page;page-break-before:always}
   #entregaDoc .ent-mem{display:grid;grid-template-columns:42mm 1fr 62mm;border:.5pt solid #9FB5B5;margin-bottom:2mm;font-size:6.6pt}
@@ -472,8 +485,6 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
     text-align:center;font-size:7pt;font-weight:600;color:#123C47}
   #entregaDoc .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:20mm;margin:10mm 8mm 0;text-align:center;font-size:7pt;color:#5A6E74}
   #entregaDoc .ent-firma div{border-top:.5pt solid #1F3339;padding-top:1mm}
-  #entregaDoc .ent-pie{margin-top:3mm;border-top:.5pt solid #D8ECEA;padding-top:1.5mm;font-size:6.8pt;
-    color:#3D8A8A;display:flex;justify-content:space-between}
 }
 
 /* ==================================================================
@@ -2024,7 +2035,7 @@ function croqMedir(){
 /* Espacio útil de la hoja horizontal para los croquis, en mm, ya sin el
    membrete ni el renglón del concepto. Cada renglón reserva lugar para
    la nota del croquis. */
-const CQ_W=258,CQ_H=168,CQ_GAP=4,CQ_PIE=4;
+const CQ_W=258,CQ_H=161,CQ_GAP=4,CQ_PIE=4;
 const cqSolo=x=>Math.min(CQ_H-CQ_PIE,CQ_W/x.r);   /* alto que tendría sola en su hoja */
 /* Una hoja se puede armar en renglones (los croquis de un grupo van lado a
    lado y los grupos uno debajo de otro) o en columnas (los de un grupo van
@@ -2123,24 +2134,45 @@ function entHojaGen(c){
      izquierda que abarca todos los renglones, y la tabla se rellena con
      renglones vacíos hasta completar la hoja. Columnas de números
      angostas; la referencia, que es texto libre, se queda con el resto. */
-  const GEN_FILAS=33,nf=Math.max(GEN_FILAS,rows.length);
+  /* Si no cabe en una hoja, se parte en varias hojas completas, cada una
+     con su membrete y su concepto, y el total va siempre en la última junto
+     con renglones de datos: nunca queda suelto en una hoja aparte. La
+     capacidad se cuenta en renglones; uno con texto largo en la referencia
+     ocupa más de uno. */
+  const CAP_HOJA=35,CAP_ULTIMA=31-(dedu?2:0);
+  const peso=r=>{const v=r.v||{};
+    const lineas=Math.max(Math.ceil(String(v.ref??'').length/50),
+      ...db.genCols.filter(g=>g.t!=='num').map(g=>Math.ceil(String(v[g.id]??'').length/11)),1);
+    return lineas>1?lineas*0.75:1;};
+  const hojas=[[]];let ocupado=0;
+  rows.forEach(r=>{const p=peso(r);
+    if(ocupado+p>CAP_HOJA&&hojas[hojas.length-1].length){hojas.push([]);ocupado=0;}
+    hojas[hojas.length-1].push(r);ocupado+=p;});
+  /* si la última no deja lugar para el total, sus primeros renglones pasan a una hoja intermedia */
+  const pesoDe=lista=>lista.reduce((a,r)=>a+peso(r),0);
+  const ult=hojas[hojas.length-1];
+  if(pesoDe(ult)>CAP_ULTIMA){const antes=[];
+    while(pesoDe(ult)>CAP_ULTIMA&&ult.length>1)antes.push(ult.shift());
+    hojas.splice(hojas.length-1,0,antes);}
   const celdas=r=>db.genCols.map(g=>`<td class="${g.t==='num'?'n':''}">${r?esc((r.v||{})[g.id]??''):''}</td>`).join('')
     +`<td class="c">${r?esc(c.unidad):''}</td>`
     +`<td class="n">${r?(r.ded?'&minus;&nbsp;':'')+dec(parcialRaw(r),3):''}</td><td>${r?esc((r.v||{}).ref??''):''}</td>`;
-  let cuerpo='';
-  for(let i=0;i<nf;i++){const r=rows[i];
-    cuerpo+=`<tr class="${r&&r.ded?'ded':''}">${i===0?`<td class="gcon" rowspan="${nf}"><b>${esc(c.clave)}</b><br>${esc(c.desc)}</td>`:''}${celdas(r)}</tr>`;}
   const pie=(l,v,u)=>`<tr class="gpie"><td class="g0"></td><td colspan="${nc}" class="r">${l}</td><td class="n">${v}</td><td>${u}</td></tr>`;
-  const tabla=`<div class="ent-genbox"><table class="ent-gen">
-    <thead><tr><th style="width:27%">Concepto</th>${db.genCols.map(g=>`<th class="${g.t==='num'?'n':''}" style="width:${g.t==='num'?'40pt':'50pt'}">${esc(g.label)}</th>`).join('')}
-      <th class="c" style="width:24pt">U.</th><th class="n" style="width:50pt">Subtotal</th><th>Referencia</th></tr></thead>
-    <tbody>${cuerpo}
-      ${dedu?pie('Suma',dec(suma,3),'')+pie('Deducciones','&minus;&nbsp;'+dec(dedu,3),''):''}
-      <tr class="t"><td class="g0"></td><td colspan="${nc}" class="r">Total generador:</td><td class="n">${dec(cantidad(c.id),3)}</td><td>${esc(c.unidad)}</td></tr>
-    </tbody></table></div>`
-    +`<div class="ent-firma"><div>Elaboró</div><div>Revisó</div></div>`;
-  return entHojasCroquis(c,'gen','Croquis · número generador')
-    +`<div class="ent-hoja">${entMembrete('Número generador')}${tabla}</div>`;
+  const cabeza=`<thead><tr><th style="width:27%">Concepto</th>${db.genCols.map(g=>`<th class="${g.t==='num'?'n':''}" style="width:${g.t==='num'?'40pt':'50pt'}">${esc(g.label)}</th>`).join('')}
+      <th class="c" style="width:24pt">U.</th><th class="n" style="width:50pt">Subtotal</th><th>Referencia</th></tr></thead>`;
+  const paginas=hojas.map((lista,ih)=>{
+    const ultima=ih===hojas.length-1;
+    const nf=lista.length+Math.max(0,Math.floor((ultima?CAP_ULTIMA:CAP_HOJA)-pesoDe(lista)));
+    let cuerpo='';
+    for(let i=0;i<nf;i++){const r=lista[i];
+      cuerpo+=`<tr class="${r&&r.ded?'ded':''}">${i===0?`<td class="gcon" rowspan="${nf}"><b>${esc(c.clave)}${hojas.length>1?` · hoja ${ih+1} de ${hojas.length}`:''}</b>${esc(c.desc)}</td>`:''}${celdas(r)}</tr>`;}
+    return `<div class="ent-hoja">${entMembrete('Número generador')}<div class="ent-genbox"><table class="ent-gen">${cabeza}
+      <tbody>${cuerpo}
+      ${ultima?(dedu?pie('Suma',dec(suma,3),'')+pie('Deducciones','&minus;&nbsp;'+dec(dedu,3),''):'')
+        +`<tr class="t"><td class="g0"></td><td colspan="${nc}" class="r">Total generador:</td><td class="n">${dec(cantidad(c.id),3)}</td><td>${esc(c.unidad)}</td></tr>`:''}
+      </tbody></table></div>${ultima?`<div class="ent-firma"><div>Elaboró</div><div>Revisó</div></div>`:''}</div>`;
+  });
+  return entHojasCroquis(c,'gen','Croquis · número generador')+paginas.join('');
 }
 /* Con un argumento —'ins', 'pre', 'mat'…— arma el documento con esa sola
    sección, pero con la misma portada y el mismo membrete: sirve para
@@ -2150,24 +2182,31 @@ function entregaHTML(solo){
   const e=entCfg(),o=db.obra;
   const sec=solo?{[solo]:1}:e.sec;
   let nsec=0;
-  const banda=t=>`<div class="ent-sec" id="s${++nsec}"><h2><span>${nsec}</span>${esc(t)}</h2>`;
+  /* Cada sección vertical va dentro de una tabla cuyo encabezado es el
+     membrete: el navegador repite el encabezado de una tabla en cada hoja,
+     así que el membrete sale arriba de todas las hojas de la sección. */
+  /* Antes de cada sección va su hoja separadora: el número en grande y
+     suave, el título al centro y debajo qué trae. */
+  const separadora=(t,d)=>`<div class="ent-sep"><div class="n">${String(nsec+1).padStart(2,'0')}</div>
+    <div class="t">${esc(t)}</div><div class="l"></div><div class="d">${esc(d)}</div></div>`;
+  const seccion=(t,cuerpo,d)=>separadora(t,d)+`<div class="ent-sec" id="s${++nsec}"><table class="ent-wrap">
+    <thead><tr><td>${entMembrete(t)}</td></tr></thead><tbody><tr><td>${cuerpo}</td></tr></tbody></table></div>`;
+  const cuenta=(n,uno,varios)=>`${n} ${n===1?uno:varios}`;
   const hoy=new Date().toLocaleDateString('es-MX',{day:'numeric',month:'long',year:'numeric'});
-  const pie=t=>`<div class="ent-pie"><span>${esc(o.nombre||'')}</span><span>${esc(t)}</span><span>${esc(o.elab||o.alumno||'')}</span></div>`;
-  const dato=(l,v)=>v?`<b>${esc(l)}</b><span>${esc(v)}</span>`:'';
+  /* Portada centrada: la materia arriba, la obra grande al centro y los
+     datos de la alumna abajo. Todo sale de Inicio → Datos de la obra. */
+  const dato=(l,v)=>v?`<div><b>${esc(l)}</b>${esc(v)}</div>`:'';
   let h=`<div class="ent-portada">
-    <div class="ent-rot">${esc(o.empresa||'Presupuesto de obra')}</div>
-    <h1>${esc(o.nombre||'Obra sin nombre')}</h1>
-    <div class="sub">${esc(o.descTrabajos||'Catálogo de conceptos y precios unitarios')}</div>
-    <div class="ent-rot">Datos de la obra</div>
-    <div class="ent-bloque">${dato('Ubicación',o.ubic)}${dato('Cliente',o.cliente)}${dato('Contrato',o.contrato)}
-      ${dato('Inicio',o.fInicio)}${dato('Término',o.fTermino)}</div>
-    <div class="ent-rot">Datos de la alumna</div>
-    <div class="ent-bloque">${dato('Nombre',o.alumno)}${dato('Código',o.codigo)}${dato('Materia',o.materia)}
-      ${dato('Profesor',o.profesor)}${dato('Ciclo',o.ciclo)}</div>
-    <div class="ent-rot">Contenido de esta entrega</div>
-    <div class="ent-bloque">${ENT_SEC.filter(([k])=>sec[k]).map(([k,l],i)=>
-      `<b>${i+1}</b><span><a href="#s${i+1}">${esc(l)}</a></span>`).join('')}</div>
-    <div style="margin-top:auto;font-size:8pt">Impreso el ${esc(hoy)}</div>
+    <div class="pt-esc">Universidad de Guadalajara · CUAAD</div>
+    <div class="pt-mat">${esc(o.materia||'')}</div>
+    <div class="pt-centro">
+      <div class="pt-doc">${esc(o.descTrabajos||'Catálogo de conceptos y precios unitarios')}</div>
+      <h1>${esc(o.nombre||'Obra sin nombre')}</h1>
+      <div class="pt-lin"></div>
+      <div class="pt-ub">${esc([o.ubic,o.empresa].filter(Boolean).join(' · '))}</div>
+    </div>
+    <div class="pt-pie">${dato('Alumna',o.alumno)}${dato('Código',o.codigo)}${dato('Profesor',o.profesor)}
+      ${dato('Ciclo',o.ciclo)}${dato('Cliente',o.cliente)}${dato('Fecha',hoy)}</div>
   </div>`;
 
   if(sec.ins){
@@ -2188,19 +2227,21 @@ function entregaHTML(solo){
     });
     const otrosIns=lista.filter(o=>!db.tipos.some(t=>t.k===o.tipo)).sort(ordCl);
     if(otrosIns.length)fi+=`<tr class="grp"><td colspan="5">Sin tipo · ${otrosIns.length}</td></tr>`+otrosIns.map(filaIns).join('');
-    h+=banda('Catálogo de insumos')+entTbl(
+    h+=seccion('Catálogo de insumos',entTbl(
       [['Clave','','56pt'],['Descripción','',''],['Unidad','','44pt'],['Tipo','','44pt'],['Costo','n','66pt']],
-      fi)+pie('Catálogo de insumos')+`</div>`;
+      fi),cuenta(lista.length,'insumo','insumos')+' · materiales, mano de obra y equipo');
   }
   if(sec.cua){
-    h+=banda('Cuadrillas')+`<div class="ent-rot">${entSel('cua').length} cuadrillas</div>`+entSel('cua').map(c=>
+    h+=seccion('Cuadrillas',entSel('cua').map(c=>
       `<div class="ent-blk"><div class="ent-sub">${esc(c.clave)} · por ${esc(c.unidad)}</div>
-       <div class="ent-desc">${esc(c.desc)}</div>${entRenglones(c.comp)}</div>`).join('')+pie('Cuadrillas')+`</div>`;
+       <div class="ent-desc">${esc(c.desc)}</div>${entRenglones(c.comp)}</div>`).join(''),
+      cuenta(entSel('cua').length,'cuadrilla','cuadrillas')+' · costo por jornada');
   }
   if(sec.bas){
-    h+=banda('Básicos')+`<div class="ent-rot">${entSel('bas').length} básicos</div>`+entSel('bas').map(a=>
+    h+=seccion('Básicos',entSel('bas').map(a=>
       `<div class="ent-blk"><div class="ent-sub">${esc(a.clave)} · por ${esc(a.unidad)}</div>
-       <div class="ent-desc">${esc(a.desc)}</div>${entRenglones(a.comp)}</div>`).join('')+pie('Básicos')+`</div>`;
+       <div class="ent-desc">${esc(a.desc)}</div>${entRenglones(a.comp)}</div>`).join(''),
+      cuenta(entSel('bas').length,'básico','básicos')+' · análisis auxiliares');
   }
   if(sec.con){
     let f='';
@@ -2210,26 +2251,26 @@ function entregaHTML(solo){
       cs.forEach(c=>{f+=`<tr><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td>
         <td class="n">${dec(cdu(c.id))}</td><td class="n">${dec(puVenta(c.id))}</td></tr>`;});
     });
-    h+=banda('Catálogo de conceptos')+entTbl(
-      [['Clave','','56pt'],['Descripción','',''],['Unidad','','40pt'],['Costo directo','n','62pt'],['P. unitario','n','62pt']],f)
-      +pie('Catálogo de conceptos')+`</div>`;
+    h+=seccion('Catálogo de conceptos',entTbl(
+      [['Clave','','56pt'],['Descripción','',''],['Unidad','','40pt'],['Costo directo','n','62pt'],['P. unitario','n','62pt']],f),
+      cuenta(entSel('con').length,'concepto','conceptos')+' por partida');
   }
   /* Matrices y generadores salen en hoja horizontal, una por concepto, con
-     su membrete y los croquis en columna a la izquierda. */
-  const bandaLand=t=>`<div class="ent-sec land" id="s${++nsec}">`;
+     su membrete; la separadora va vertical como las demás. */
+  const bandaLand=(t,d)=>separadora(t,d)+`<div class="ent-sec land" id="s${++nsec}">`;
   if(sec.mat){
     const con=entSel('mat');
-    h+=bandaLand('Matrices de precio unitario')+(con.length?con.map(entHojaMatriz).join('')
-      :'<div class="ent-desc">Todavía no hay matrices capturadas.</div>')+`</div>`;
+    h+=bandaLand('Matrices de precio unitario',cuenta(con.length,'análisis','análisis')+' · cada uno con su hoja de croquis')
+      +(con.length?con.map(entHojaMatriz).join(''):'<div class="ent-desc">Todavía no hay matrices capturadas.</div>')+`</div>`;
   }
   if(sec.gen){
     const con=entSel('gen');
-    h+=bandaLand('Generadores')+(con.length?con.map(entHojaGen).join('')
-      :'<div class="ent-desc">Todavía no hay generadores capturados.</div>')+`</div>`;
+    h+=bandaLand('Números generadores',cuenta(con.length,'generador','generadores')+' · cada uno con su hoja de croquis')
+      +(con.length?con.map(entHojaGen).join(''):'<div class="ent-desc">Todavía no hay generadores capturados.</div>')+`</div>`;
   }
   if(sec.ind){
     const r=db.indirectos.rubros||[];
-    h+=banda('Indirectos')+entTbl(
+    h+=seccion('Indirectos',entTbl(
       [['Concepto','',''],['Mensual','n','78pt'],['Meses','n','52pt'],['Importe','n','84pt']],
       (()=>{/* un renglón de separación por rubro, con su importe del rubro */
         const grupos=[...new Set(r.map(x=>x.grupo||'Sin grupo'))];
@@ -2242,18 +2283,19 @@ function entregaHTML(solo){
               <td class="n">${dec(x.mensual)}</td><td class="n">${dec(ms,0)}</td>
               <td class="n">${dec(N(x.mensual)*ms)}</td></tr>`).join('');
         }).join('');})()
-      +`<tr class="t"><td colspan="3">Porcentaje de indirectos aplicado</td><td class="n">${dec(pctIndirectos()*100,2)}%</td></tr>`)
-      +pie('Indirectos')+`</div>`;
+      +`<tr class="t"><td colspan="3">Porcentaje de indirectos aplicado</td><td class="n">${dec(pctIndirectos()*100,2)}%</td></tr>`),
+      `Gastos de oficina y de obra · ${dec(pctIndirectos()*100,2)}% sobre el costo directo`);
   }
   if(sec.car){
     const g=db.cargos;
-    h+=banda('Utilidad y cargos')+entTbl(
+    h+=seccion('Utilidad y cargos',entTbl(
       [['Cargo','',''],['Valor','n','80pt']],
       [['ISR',dec(N(g.isr),2)+'%'],['PTU',dec(N(g.ptu),2)+'%'],['Utilidad esperada neta',dec(N(g.uen),2)+'%'],
        ['Utilidad integrada',dec(utilidadIntegrada()*100,2)+'%'],['Financiamiento',dec(N(g.fin),2)+'%'],
        ['Cargos adicionales',dec(N(g.ca),2)+'%'],['IVA',dec(N(g.iva),2)+'%'],
        ['Indirectos',dec(pctIndirectos()*100,2)+'%'],['Factor de sobrecosto',dec(factorSobrecosto(),4)]]
-      .map(x=>`<tr><td>${esc(x[0])}</td><td class="n">${x[1]}</td></tr>`).join(''))+pie('Utilidad y cargos')+`</div>`;
+      .map(x=>`<tr><td>${esc(x[0])}</td><td class="n">${x[1]}</td></tr>`).join('')),
+      `Factor de sobrecosto ${dec(factorSobrecosto(),4)}`);
   }
   if(sec.pre){
     const tt=totalesObra();let f='';
@@ -2262,16 +2304,18 @@ function entregaHTML(solo){
       const impPart=cs.reduce((a,c)=>a+cantidad(c.id)*puVenta(c.id),0);
       f+=`<tr class="grp"><td colspan="5">${esc(p.clave)} · ${esc(p.nombre)} · ${cs.length}</td>
           <td class="n">${dec(impPart)}</td></tr>`;
+      /* descripción completa; los conceptos que todavía no tienen cantidad
+         o precio salen en gris, para que se note qué falta */
       cs.forEach(c=>{const q=cantidad(c.id),pu=puVenta(c.id);
-        f+=`<tr><td>${esc(c.clave)}</td><td>${esc(c.descCorta||c.desc)}</td><td>${esc(c.unidad)}</td>
+        f+=`<tr class="${q&&pu?'':'cero'}"><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td>
           <td class="n">${dec(q,3)}</td><td class="n">${dec(pu)}</td><td class="n">${dec(q*pu)}</td></tr>`;});
     });
-    h+=banda('Presupuesto')+entTbl(
+    h+=seccion('Presupuesto',entTbl(
       [['Clave','','56pt'],['Concepto','',''],['Unidad','','38pt'],['Cantidad','n','56pt'],['P. unitario','n','62pt'],['Importe','n','72pt']],
       f+`<tr class="t"><td colspan="5">Subtotal</td><td class="n">${dec(tt.venta)}</td></tr>
          <tr class="t"><td colspan="5">IVA ${dec(N(db.cargos.iva),0)}%</td><td class="n">${dec(tt.total-tt.venta)}</td></tr>
-         <tr class="t"><td colspan="5">Total</td><td class="n">${dec(tt.total)}</td></tr>`)
-      +pie('Presupuesto')+`</div>`;
+         <tr class="t"><td colspan="5">Total</td><td class="n">${dec(tt.total)}</td></tr>`),
+      `${db.conceptos.filter(c=>cantidad(c.id)&&puVenta(c.id)).length} de ${cuenta(db.conceptos.length,'concepto','conceptos')} con cantidad · total con IVA ${money(tt.total)}`);
   }
   return h;
 }
@@ -2291,17 +2335,22 @@ body{margin:0;background:#E8EFEF;color:var(--ink);font-family:Alexandria,'Trebuc
   padding:8px 14px;text-align:center;letter-spacing:.02em}
 .avisoRO b{font-weight:600}
 a{color:var(--teal)}
-.ent-portada{border-top:8px solid var(--deep);border-bottom:1px solid var(--teal);padding:22px 0 26px;margin-bottom:26px}
-.ent-portada h1{font-size:30px;font-weight:600;letter-spacing:-.02em;color:var(--deep);margin:0 0 6px}
-.ent-portada .sub{font-size:14px;color:var(--teal);margin-bottom:26px;max-width:62ch;line-height:1.45}
-.ent-bloque{display:grid;grid-template-columns:auto 1fr;gap:6px 22px;font-size:12.5px;margin-bottom:22px;
-  background:var(--wash);padding:14px 16px;border-left:4px solid var(--mint)}
-.ent-bloque b{font-weight:600;color:var(--deep);white-space:nowrap}
-.ent-rot{font-size:10px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);
-  border-bottom:1px solid var(--mint);padding-bottom:5px;margin-bottom:11px}
-.ent-sec{margin-top:34px;scroll-margin-top:52px}
-.ent-sec>h2{background:var(--deep);color:#fff;font-size:15px;font-weight:600;margin:0 0 14px;padding:11px 14px}
-.ent-sec>h2 span{color:#7FB8B4;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:13px;margin-right:12px}
+.ent-portada{border-top:8px solid var(--deep);padding:28px 8px 22px;margin-bottom:26px;text-align:center;display:flex;flex-direction:column;gap:6px;min-height:560px}
+.pt-esc{font-size:10px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal)}
+.pt-mat{font-size:15px;font-weight:500;color:var(--deep)}
+.pt-centro{margin:auto 0}
+.pt-doc{font-size:11px;letter-spacing:.16em;text-transform:uppercase;color:var(--teal);margin-bottom:10px}
+.ent-portada h1{font-size:40px;font-weight:600;letter-spacing:-.02em;color:var(--deep);margin:0;line-height:1.05}
+.pt-lin{width:60px;height:3px;background:var(--terra);margin:16px auto}
+.pt-ub{font-size:13px;color:var(--soft)}
+.pt-pie{display:grid;grid-template-columns:1fr 1fr;gap:10px 24px;font-size:12px;text-align:left;border-top:1px solid var(--mint);padding-top:14px}
+.pt-pie b{display:block;font-size:9px;letter-spacing:.14em;text-transform:uppercase;color:var(--teal);font-weight:500}
+.ent-sep{min-height:340px;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;margin:30px 0;border-top:1px solid var(--mint)}
+.ent-sep .n{font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:72px;color:var(--mint);line-height:1}
+.ent-sep .t{font-size:24px;font-weight:600;color:var(--deep);margin-top:8px}
+.ent-sep .l{width:50px;height:2px;background:var(--terra);margin:14px 0}
+.ent-sep .d{font-size:12px;color:var(--soft)}
+.ent-sec{scroll-margin-top:52px}
 .ent-sub{font-size:13.5px;font-weight:600;color:var(--deep);margin:22px 0 5px}
 .ent-desc{font-size:11px;color:var(--soft);margin:0 0 7px;line-height:1.45}
 .tw{overflow-x:auto;-webkit-overflow-scrolling:touch;margin-bottom:12px}
@@ -2319,6 +2368,8 @@ tr.s td{background:var(--wash);color:var(--deep);font-weight:600}
 tr.grp td{background:var(--mint);color:var(--deep);font-weight:600;text-transform:uppercase;letter-spacing:.05em;font-size:10px}
 tr.grp td.n{font-family:'IBM Plex Mono',ui-monospace,monospace;letter-spacing:0}
 tr.ded td{background:#FBF1EA;color:#8A4E35}
+tr.cero td{color:#9AABAF}
+table.ent-wrap>thead>tr>td,table.ent-wrap>tbody>tr>td{border:0;padding:0}
 .tag{display:inline-block;font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:9.5px;padding:1px 6px;border-radius:20px;background:var(--mint);color:#1A6B6B;white-space:nowrap}
 .tag.mat{background:#E3EEF5;color:#2B5F7E}.tag.mo{background:#F5E9E1;color:#A55C3A}.tag.eq{background:#E8EEE4;color:#4A6B3A}
 .tag.pct{background:#EDE7F2;color:#5C4A7E}.tag.aux{background:#DCE9E0;color:#2F6B4A}.tag.cuad{background:#F1E3D9;color:#8A4A28}
@@ -2352,23 +2403,23 @@ table.ent-gen td.gcon,table.ent-gen td.g0{border-left:0}
 table.ent-gen td.gcon{border-bottom:0;vertical-align:top;text-align:justify;min-width:180px;font-size:11px}
 table.ent-gen td.gcon b{display:block;color:var(--deep);margin-bottom:6px}
 table.ent-gen tr.gpie td{background:var(--wash);color:var(--deep);font-weight:600;border-top:1px solid var(--deep)}
-.ent-pie{margin-top:12px;border-top:1px solid var(--mint);padding-top:6px;font-size:10.5px;color:var(--teal);
-  display:flex;justify-content:space-between;gap:12px;flex-wrap:wrap}
 @media (max-width:820px){html,body{overflow-x:hidden}.hoja{padding:22px 12px 40px}
-  .tw table{min-width:640px}.ent-portada h1{font-size:23px}
+  .tw table{min-width:640px}.ent-portada h1{font-size:28px}
   table{font-size:11px}td,thead th{padding:5px 6px}
   .ent-mem{grid-template-columns:1fr}.ent-mem .emp,.ent-mem .dat{border:0}.ent-mem .tit{border-top:1px solid #9FB5B5;border-bottom:1px solid #9FB5B5}
-  .ent-bloque{grid-template-columns:1fr;gap:2px 0}.ent-bloque b{margin-top:8px}}
+  .pt-pie{grid-template-columns:1fr}}
 @media print{
-  @page{size:letter;margin:13mm 11mm}
+  /* margen ancho a la izquierda para el engargolado, y número de hoja abajo */
+  @page{size:letter;margin:12mm 11mm 12mm 22mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   body{background:#fff}.avisoRO{display:none}
   .tw{overflow:visible!important}
   .hoja{max-width:none;padding:0;box-shadow:none}
-  .ent-portada{height:95vh;display:flex;flex-direction:column;page-break-after:always}
-  .ent-sec{page-break-before:auto;margin-top:8mm}
-  .ent-sec>h2{break-after:avoid;page-break-after:avoid}
+  .ent-portada{height:250mm;min-height:0;margin:0;page-break-after:always}
+  .ent-sep{height:250mm;min-height:0;margin:0;border:0;break-before:page;break-after:page}
+  .ent-sec{break-before:page}
   .ent-blk,.ent-cqhoja,tbody tr{break-inside:avoid}
-  @page land{size:letter landscape;margin:7mm 9mm}
+  /* la hoja horizontal se engargola por arriba: ahí va el margen ancho */
+  @page land{size:letter landscape;margin:13mm 9mm 8mm 9mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   .ent-sec.land{page:land;margin-top:0}
   .ent-hoja{margin:0}.ent-hoja+.ent-hoja{break-before:page}
   *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}

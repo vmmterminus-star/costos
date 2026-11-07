@@ -226,6 +226,9 @@ tr.tot td{background:var(--deep)!important;color:#fff;font-weight:500;font-size:
 tr.sub td{background:#E9F3F3!important;font-weight:500;color:var(--deep);padding:6px 7px}
 tr.ded td{background:#FBF2ED!important}
 tr.ded td .ro,tr.ded td input{color:#8A4E32}
+/* conceptos sin precio o sin importe: en gris, para ver de un vistazo cuáles ya tienen información */
+tr.vacio td,tr.vacio td .ro,tr.vacio td input,tr.vacio td textarea,tr.vacio td select{color:#A3B2B6}
+tr.vacio .tag{opacity:.5}
 
 .kpis{display:grid;grid-template-columns:repeat(auto-fit,minmax(145px,1fr));gap:9px}
 .kpi{background:var(--wash);border-left:3px solid var(--teal);border-radius:0 8px 8px 0;padding:10px 12px}
@@ -470,10 +473,12 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc table.ent-gen tr.t td{border-left-color:#123C47!important}
   /* hoja de croquis: medidas en mm que calcula croqAcomodo() */
   #entregaDoc .ent-cqhoja{break-inside:avoid}
-  #entregaDoc .ent-cqcon{display:flex;gap:3mm;border:.4pt solid #9FB5B5;padding:1.2mm 2mm;margin-bottom:3mm;font-size:6.8pt;
-    white-space:nowrap;overflow:hidden}
-  #entregaDoc .ent-cqcon b{color:#123C47;font-family:'IBM Plex Mono',monospace}
-  #entregaDoc .ent-cqcon span{overflow:hidden;text-overflow:ellipsis;color:#1F3339}
+  /* el concepto de la hoja de croquis: clave grande y descripción en hasta tres renglones */
+  #entregaDoc .ent-cqcon{display:grid;grid-template-columns:auto 1fr;gap:5mm;align-items:center;height:16mm;
+    border:.4pt solid #9FB5B5;border-left:1.4mm solid #123C47;background:#F4F9F9!important;padding:1.5mm 3.5mm;margin-bottom:3mm}
+  #entregaDoc .ent-cqcon b{color:#123C47;font-family:'IBM Plex Mono',monospace;font-size:15pt;font-weight:500;white-space:nowrap}
+  #entregaDoc .ent-cqcon span{font-size:7.6pt;line-height:1.32;color:#1F3339;display:-webkit-box;-webkit-box-orient:vertical;
+    -webkit-line-clamp:3;overflow:hidden}
   #entregaDoc .ent-cqarea{display:flex;flex-direction:column;align-items:center;gap:4mm}
   #entregaDoc .ent-cqfila{display:flex;justify-content:center;gap:4mm}
   #entregaDoc .ent-cqarea.cols{flex-direction:row;justify-content:center;align-items:center}
@@ -2035,7 +2040,7 @@ function croqMedir(){
 /* Espacio útil de la hoja horizontal para los croquis, en mm, ya sin el
    membrete ni el renglón del concepto. Cada renglón reserva lugar para
    la nota del croquis. */
-const CQ_W=258,CQ_H=161,CQ_GAP=4,CQ_PIE=4;
+const CQ_W=258,CQ_H=151,CQ_GAP=4,CQ_PIE=4;
 const cqSolo=x=>Math.min(CQ_H-CQ_PIE,CQ_W/x.r);   /* alto que tendría sola en su hoja */
 /* Una hoja se puede armar en renglones (los croquis de un grupo van lado a
    lado y los grupos uno debajo de otro) o en columnas (los de un grupo van
@@ -2096,7 +2101,7 @@ function entHojasCroquis(c,b,titulo){
       <img src="${x.k.src}" alt="Croquis" style="width:${x.w.toFixed(1)}mm;height:${x.h.toFixed(1)}mm">
       <figcaption>${esc(x.k.nota||'')}</figcaption></figure>`;
   return croqAcomodo(cs).map(p=>`<div class="ent-hoja ent-cqhoja">${entMembrete(titulo)}
-    <div class="ent-cqcon"><b>${esc(c.clave)}</b><span>${esc(c.descCorta||c.desc)}</span></div>
+    <div class="ent-cqcon"><b>${esc(c.clave)}</b><span>${esc(c.desc)}</span></div>
     <div class="ent-cqarea ${p.modo==='c'?'cols':''}">${p.grupos.map(g=>
       `<div class="ent-cqfila">${g.map(fig).join('')}</div>`).join('')}</div></div>`).join('');
 }
@@ -2248,7 +2253,7 @@ function entregaHTML(solo){
     db.partidas.forEach(p=>{
       const cs=entSel('con').filter(c=>c.partida===p.id);if(!cs.length)return;
       f+=`<tr class="grp"><td colspan="5">${esc(p.clave)} · ${esc(p.nombre)} · ${cs.length}</td></tr>`;
-      cs.forEach(c=>{f+=`<tr><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td>
+      cs.forEach(c=>{f+=`<tr class="${puVenta(c.id)?'':'cero'}"><td>${esc(c.clave)}</td><td>${esc(c.desc)}</td><td class="c">${esc(c.unidad)}</td>
         <td class="n">${dec(cdu(c.id))}</td><td class="n">${dec(puVenta(c.id))}</td></tr>`;});
     });
     h+=seccion('Catálogo de conceptos',entTbl(
@@ -2384,8 +2389,8 @@ table.ent-wrap>thead>tr>td,table.ent-wrap>tbody>tr>td{border:0;padding:0}
 .ent-mem .dat span{padding:3px 6px}.ent-mem .dat span:first-child{background:var(--wash);color:var(--deep);font-weight:600}
 table.ent-cpt{margin-bottom:10px}
 table.ent-cpt th{background:var(--wash);color:var(--deep);border:1px solid #9FB5B5}
-.ent-cqcon{display:flex;gap:10px;border:1px solid #9FB5B5;padding:4px 8px;margin-bottom:10px;font-size:11px}
-.ent-cqcon b{color:var(--deep);font-family:'IBM Plex Mono',ui-monospace,monospace;white-space:nowrap}
+.ent-cqcon{display:flex;gap:14px;align-items:center;border:1px solid #9FB5B5;border-left:5px solid var(--deep);background:var(--wash);padding:8px 12px;margin-bottom:10px;font-size:11.5px}
+.ent-cqcon b{color:var(--deep);font-family:'IBM Plex Mono',ui-monospace,monospace;font-size:19px;font-weight:500;white-space:nowrap}
 .ent-cqarea{display:flex;flex-direction:column;align-items:center;gap:12px}
 .ent-cqfila{display:flex;flex-wrap:wrap;justify-content:center;gap:12px;max-width:100%}
 .ent-cqarea.cols{flex-direction:row;flex-wrap:wrap;justify-content:center}
@@ -3023,7 +3028,9 @@ function nextClave(pid){
    partida quedan al final, visibles, para que no se te pierdan. */
 function renderConceptos(){
   const completas=!!db.ui.descCompletas;
-  const fila=(c,ix)=>`<tr class="${completas?'':'compacta'}" data-rev="${c.rev?c.id:''}">
+  /* en gris los conceptos que todavía no tienen precio: así se ve de un
+     vistazo cuáles ya tienen matriz */
+  const fila=(c,ix)=>`<tr class="${completas?'':'compacta'}${puVenta(c.id)?'':' vacio'}" data-rev="${c.rev?c.id:''}">
       <td>${revDot(c)}<input value="${esc(c.clave)}" oninput="upCon('${c.id}','clave',this.value)" onkeydown="${enterAdd('addConcepto()')}" style="width:calc(100% - 12px)"></td>
       <td><select onchange="upCon('${c.id}','partida',this.value)">
         <option value="">—</option>
@@ -3585,7 +3592,7 @@ function renderPresup(){
     body+=`<tr class="grp"><td colspan="6">${esc(p.clave?p.clave+' · '+p.nombre:p.nombre)}</td></tr>`;
     body+=list.map(c=>{
       const q=cantidad(c.id),pu=modoCD?cdu(c.id):puVenta(c.id),imp=q*pu;sub+=imp;
-      return `<tr>
+      return `<tr class="${imp?'':'vacio'}">
         <td><span class="tag" style="margin-left:7px">${esc(c.clave)}</span></td>
         <td><div class="ro txt">${esc(c.desc)}</div></td>
         <td class="mid"><div class="ro" style="text-align:center">${esc(c.unidad)}</div></td>

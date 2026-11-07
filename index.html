@@ -305,8 +305,8 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
 .print-hd{display:none}
 .print-ft{display:none}
 @media print{
-  /* margen ancho a la izquierda para el engargolado, y número de hoja abajo */
-  @page{size:letter;margin:12mm 11mm 12mm 22mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
+  /* mismo margen en los dos costados: impreso por las dos caras, el engargolado cae de un lado o del otro */
+  @page{size:letter;margin:12mm 18mm 12mm 18mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   body{background:#fff;font-size:8pt}
   header,nav,.dock,details.help,.hint,button,.panel-hd .sub,.kpis,.act,th.act,.leg,.prog,.sem,.avisos,.croq-hd,.croq-vacio,.lightbox,.rev-box{display:none!important}
   tr.rev-row{display:none!important}
@@ -374,10 +374,25 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   /* modo entrega: se oculta la app entera y se imprime el documento armado */
   body.entrega .app,body.entrega .dock{display:none!important}
   body.entrega #entregaDoc{display:block!important}
+  /* Las matrices, generadores y croquis se diseñan en horizontal, pero en
+     el PDF van girados dentro de una hoja vertical: así todas las hojas
+     son verticales y la impresora no puede encogerlas. Todas giran hacia
+     el mismo lado, para leerlas volteando el engargolado siempre igual. */
+  @page rot{size:letter portrait;margin:7mm 17mm 9mm 17mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
+}
+/* Los estilos del documento de entrega viven fuera de @media print para
+   que la app pueda medir las hojas en pantalla antes de imprimir (ver
+   girarHojas). En pantalla #entregaDoc está oculto, así que no estorban. */
   /* La entrega se imprime con la paleta de la app, no en blanco y negro.
      print-color-adjust obliga al navegador a respetar los fondos. */
   #entregaDoc,#entregaDoc *{-webkit-print-color-adjust:exact!important;print-color-adjust:exact!important}
   #entregaDoc{color:#1F3339}
+  #entregaDoc table{min-width:0}
+  body.midiendo #entregaDoc{display:block!important;position:absolute;left:-99999px;top:0;width:182mm}
+  #entregaDoc .ent-giro{width:182mm;height:262mm;position:relative;overflow:hidden;break-inside:avoid}
+  #entregaDoc .ent-giro+.ent-giro{break-before:page;page-break-before:always}
+  #entregaDoc .ent-giro>.ent-hoja{position:absolute;left:0;top:0;width:262mm;height:182mm;overflow:hidden;
+    transform-origin:top left;transform:translateY(262mm) rotate(-90deg)}
   /* portada: ocupa la hoja vertical completa (alto útil de la carta) */
   #entregaDoc .ent-portada{height:250mm;display:flex;flex-direction:column;page-break-after:always;
     border-top:3mm solid #123C47;padding:9mm 4mm 2mm}
@@ -433,11 +448,9 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
   #entregaDoc .tag.aux{background:#DCE9E0!important;color:#2F6B4A!important}
   #entregaDoc .tag.cuad{background:#F1E3D9!important;color:#8A4A28!important}
   #entregaDoc .ent-blk{break-inside:avoid}
-  /* hojas horizontales de matriz y generador */
-  /* la hoja horizontal se engargola por arriba: ahí va el margen ancho */
-  @page land{size:letter landscape;margin:13mm 9mm 8mm 9mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
-  #entregaDoc .ent-sec.land{page:land;margin-top:0}
-  #entregaDoc .ent-hoja+.ent-hoja,#entregaDoc .ent-sec.land+.ent-sec.land{break-before:page;page-break-before:always}
+  /* hojas de matriz y generador: van giradas en hojas verticales (página rot) */
+  #entregaDoc .ent-sec.land{page:rot;margin-top:0}
+  #entregaDoc .ent-sec.land+.ent-sec.land{break-before:page;page-break-before:always}
   #entregaDoc .ent-mem{display:grid;grid-template-columns:42mm 1fr 62mm;border:.5pt solid #9FB5B5;margin-bottom:2mm;font-size:6.6pt}
   #entregaDoc .ent-mem .emp{padding:1.2mm 2mm;border-right:.5pt solid #9FB5B5;display:flex;flex-direction:column;justify-content:center}
   #entregaDoc .ent-mem .emp b{font-size:10pt;color:#123C47}
@@ -490,7 +503,6 @@ details.help .hb p{margin:0 0 7px} details.help .hb p:last-child{margin:0}
     text-align:center;font-size:7pt;font-weight:600;color:#123C47}
   #entregaDoc .ent-firma{display:grid;grid-template-columns:1fr 1fr;gap:20mm;margin:10mm 8mm 0;text-align:center;font-size:7pt;color:#5A6E74}
   #entregaDoc .ent-firma div{border-top:.5pt solid #1F3339;padding-top:1mm}
-}
 
 /* ==================================================================
    MODO REVISIÓN
@@ -2040,7 +2052,7 @@ function croqMedir(){
 /* Espacio útil de la hoja horizontal para los croquis, en mm, ya sin el
    membrete ni el renglón del concepto. Cada renglón reserva lugar para
    la nota del croquis. */
-const CQ_W=258,CQ_H=151,CQ_GAP=4,CQ_PIE=4;
+const CQ_W=258,CQ_H=138,CQ_GAP=4,CQ_PIE=4;
 const cqSolo=x=>Math.min(CQ_H-CQ_PIE,CQ_W/x.r);   /* alto que tendría sola en su hoja */
 /* Una hoja se puede armar en renglones (los croquis de un grupo van lado a
    lado y los grupos uno debajo de otro) o en columnas (los de un grupo van
@@ -2144,7 +2156,7 @@ function entHojaGen(c){
      con renglones de datos: nunca queda suelto en una hoja aparte. La
      capacidad se cuenta en renglones; uno con texto largo en la referencia
      ocupa más de uno. */
-  const CAP_HOJA=35,CAP_ULTIMA=31-(dedu?2:0);
+  const CAP_HOJA=31,CAP_ULTIMA=27-(dedu?2:0);
   const peso=r=>{const v=r.v||{};
     const lineas=Math.max(Math.ceil(String(v.ref??'').length/50),
       ...db.genCols.filter(g=>g.t!=='num').map(g=>Math.ceil(String(v[g.id]??'').length/11)),1);
@@ -2414,8 +2426,8 @@ table.ent-gen tr.gpie td{background:var(--wash);color:var(--deep);font-weight:60
   .ent-mem{grid-template-columns:1fr}.ent-mem .emp,.ent-mem .dat{border:0}.ent-mem .tit{border-top:1px solid #9FB5B5;border-bottom:1px solid #9FB5B5}
   .pt-pie{grid-template-columns:1fr}}
 @media print{
-  /* margen ancho a la izquierda para el engargolado, y número de hoja abajo */
-  @page{size:letter;margin:12mm 11mm 12mm 22mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
+  /* mismo margen en los dos costados: impreso por las dos caras, el engargolado cae de un lado o del otro */
+  @page{size:letter;margin:12mm 18mm 12mm 18mm;@bottom-right{content:"Hoja " counter(page) " de " counter(pages);font-family:Alexandria,sans-serif;font-size:7pt;color:#3D8A8A}}
   body{background:#fff}.avisoRO{display:none}
   .tw{overflow:visible!important}
   .hoja{max-width:none;padding:0;box-shadow:none}
@@ -2455,12 +2467,33 @@ async function bajarEntregaHTML(solo){
   setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove();},2000);
   flash('HTML de entrega descargado · '+Math.round(doc.length/1024)+' KB');
 }
+/* Mete cada hoja horizontal en un marco vertical que la gira, y si su
+   contenido no cabe en el alto de la hoja lo reduce lo justo: en una hoja
+   girada lo que sobra no pasa a la siguiente, se perdería. Se mide en
+   pantalla, con el documento fuera de la vista. */
+function girarHojas(box){
+  box.querySelectorAll('.ent-sec.land>.ent-hoja').forEach(h=>{
+    const marco=document.createElement('div');marco.className='ent-giro';
+    h.parentNode.insertBefore(marco,h);marco.appendChild(h);
+    const fit=document.createElement('div');fit.className='ent-fit';
+    while(h.firstChild)fit.appendChild(h.firstChild);
+    h.appendChild(fit);
+  });
+  document.body.classList.add('midiendo');
+  box.querySelectorAll('.ent-giro .ent-fit').forEach(fit=>{
+    const alto=fit.parentNode.clientHeight,real=fit.scrollHeight;
+    if(real>alto+1){const f=Math.max(.6,alto/real*.98);
+      fit.style.zoom=f;fit.style.width=(262/f).toFixed(1)+'mm';}
+  });
+  document.body.classList.remove('midiendo');
+}
 async function imprimirEntrega(solo){
   const e=entCfg();
   if(!solo&&!ENT_SEC.some(([k])=>e.sec[k])){alert('Marca al menos una sección.');return;}
   await croqMedir();
   const box=document.getElementById('entregaDoc');
   box.innerHTML=entregaHTML(solo);
+  girarHojas(box);
   document.body.classList.add('entrega');
   const limpia=()=>{document.body.classList.remove('entrega');box.innerHTML='';
     window.removeEventListener('afterprint',limpia);};

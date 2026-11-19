@@ -555,6 +555,13 @@ body.rev .croq-grid img,body.rev .lightbox{pointer-events:auto}
   border-radius:5px;padding:1px 5px;word-break:break-all}
 @media print{.rev-aviso{display:none!important}}
 @media (max-width:820px){.rev-aviso{font-size:10.5px}.rp b{min-width:0}}
+/* aviso fijo cuando no se pudo guardar: no se quita solo */
+.aviso-guardado{position:fixed;left:12px;right:12px;bottom:calc(64px + env(safe-area-inset-bottom));z-index:90;
+  background:var(--terra);color:#fff;font-size:12px;line-height:1.4;padding:10px 14px;border-radius:10px;
+  display:flex;gap:10px;align-items:center;justify-content:center;flex-wrap:wrap;box-shadow:0 6px 20px rgba(0,0,0,.18)}
+.aviso-guardado b{font-weight:600}
+.aviso-guardado .btn{background:rgba(255,255,255,.16);border-color:rgba(255,255,255,.35);color:#fff}
+@media print{.aviso-guardado{display:none!important}}
 </style>
 </head>
 <body>
@@ -875,6 +882,116 @@ create policy "acceso abierto" on costos_sync for all using (true) with check (t
 
 <script>
 /* ==================================================================
+   0. ALMACENAMIENTO
+   Los datos viven en IndexedDB (aguanta cientos de MB). Antes vivían en
+   localStorage (tope de ~5 MB). La primera vez que se abre esta versión,
+   lo que haya en localStorage['costos_v3'] se copia a IndexedDB, se
+   comprueba que quedó igual, y el original se queda como respaldo.
+   El texto guardado es el mismo JSON de siempre: no cambia el formato.
+   El resto de la app arranca hasta que los datos están listos.
+   ================================================================== */
+const ALMA=(function(){
+  const BD='costos',CAJON='datos',LLAVE='costos_v3',MARCA='costos_v3_en_idb';
+  const q=new URLSearchParams(location.search).get('rev');
+  const rev=q!==null&&q!=='0';
+  const A={modo:'ls',raw:null,bloqueado:false,recargando:false,migrado:false};
+  let con=null,cola=Promise.resolve(),avisoInicial=null;
+  const lsGet=k=>{try{return localStorage.getItem(k);}catch(e){return null;}};
+  const conTope=(pr,ms)=>Promise.race([pr,new Promise((_,mal)=>setTimeout(()=>mal(new Error('tiempo')),ms))]);
+  function abrir(){
+    if(con)return Promise.resolve(con);
+    return new Promise((ok,mal)=>{
+      if(!window.indexedDB){mal(new Error('sin IndexedDB'));return;}
+      let r;try{r=indexedDB.open(BD,1);}catch(e){mal(e);return;}
+      r.onupgradeneeded=()=>{r.result.createObjectStore(CAJON);};
+      r.onsuccess=()=>{con=r.result;
+        con.onversionchange=()=>{con.close();con=null;};
+        con.onclose=()=>{con=null;};
+        ok(con);};
+      r.onerror=()=>mal(r.error);
+      r.onblocked=()=>mal(new Error('bloqueado'));
+    });
+  }
+  const leer=k=>abrir().then(c=>new Promise((ok,mal)=>{
+    const g=c.transaction(CAJON,'readonly').objectStore(CAJON).get(k);
+    g.onsuccess=()=>ok(g.result);g.onerror=()=>mal(g.error);}));
+  const escribir=(k,v)=>abrir().then(c=>new Promise((ok,mal)=>{
+    const t=c.transaction(CAJON,'readwrite');t.objectStore(CAJON).put(v,k);
+    t.oncomplete=()=>ok();t.onerror=()=>mal(t.error);
+    t.onabort=()=>mal(t.error||new Error('cancelado'));}));
+
+  /* Guarda el texto del JSON. Las escrituras van en fila, una tras otra. */
+  A.guardar=function(txt){
+    if(A.bloqueado)return Promise.reject(new Error('bloqueado'));
+    if(A.modo==='idb'){
+      const p=cola.then(()=>conTope(escribir(LLAVE,txt),15000));
+      cola=p.catch(()=>{});return p;
+    }
+    try{localStorage.setItem(LLAVE,txt);return Promise.resolve();}
+    catch(e){return Promise.reject(e);}
+  };
+
+  /* Aviso fijo abajo. Solo se quita cuando un guardado sale bien. */
+  A.aviso=function(html){
+    if(!document.body){avisoInicial=html;return;}
+    let b=document.getElementById('avisoGuardado');
+    if(!b){b=document.createElement('div');b.id='avisoGuardado';b.className='aviso-guardado';
+      b.setAttribute('role','alert');document.body.appendChild(b);}
+    b.innerHTML=html;
+  };
+  A.quitarAviso=function(){const b=document.getElementById('avisoGuardado');if(b)b.remove();};
+  A.falla=function(){
+    A.aviso(A.bloqueado
+      ?'<span><b>No se guardó.</b> No pude abrir tus datos guardados. Recarga la página y no captures nada hasta que este aviso desaparezca.</span>'
+       +'<button class="btn mini" onclick="location.reload()">Recargar</button>'
+      :'<span><b>No se guardó.</b> Exporta tu JSON ahora para no perder lo que capturaste.</span>'
+       +'<button class="btn mini" onclick="exportJSON()">Exportar JSON</button>'
+       +'<button class="btn mini" onclick="guardaYa()">Reintentar</button>');
+  };
+
+  A.listo=(async()=>{
+    const ls=lsGet(LLAVE);
+    if(rev){A.raw=ls;return;}            /* revisión: no se escribe nada */
+    const marcado=!!lsGet(MARCA);
+    try{
+      let v=await conTope(leer(LLAVE),8000);
+      if(v==null&&ls!=null){
+        if(marcado){
+          /* ya se había mudado, pero IndexedDB llegó vacío: se abre la copia vieja y se avisa */
+          avisoInicial='<span><b>Ojo:</b> no encontré tus datos nuevos y abrí la copia anterior del '
+            +String(lsGet(MARCA)).slice(0,10)+'. Si tienes un JSON más reciente, impórtalo.</span>'
+            +'<button class="btn mini" onclick="ALMA.quitarAviso()">Entendido</button>';
+        }else{
+          await conTope(escribir(LLAVE,ls),15000);
+          const vuelta=await conTope(leer(LLAVE),8000);
+          if(vuelta!==ls)throw new Error('la copia no salió igual');
+          try{localStorage.setItem(MARCA,new Date().toISOString());}catch(e){}
+          A.migrado=true;
+        }
+        v=ls;
+      }
+      A.modo='idb';A.raw=v==null?null:v;
+      try{navigator.storage&&navigator.storage.persist&&navigator.storage.persist();}catch(e){}
+    }catch(e){
+      A.raw=ls;
+      if(marcado){A.bloqueado=true;A.falla();}  /* no se pisa lo que quedó en IndexedDB */
+      else A.modo='ls';                          /* navegador sin IndexedDB: se queda como antes */
+    }
+  })();
+
+  /* Arranca el código de la app cuando los datos y la página están listos. */
+  const pagina=new Promise(ok=>{if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',ok);else ok();});
+  Promise.all([A.listo.catch(()=>{}),pagina]).then(()=>{
+    if(avisoInicial){const h=avisoInicial;avisoInicial=null;A.aviso(h);}
+    const s=document.createElement('script');
+    s.textContent=document.getElementById('appMain').textContent;
+    document.body.appendChild(s);
+  });
+  return A;
+})();
+</script>
+<script type="text/x-costos" id="appMain">
+/* ==================================================================
    1. MODELO
    ================================================================== */
 const KEY='costos_v3';
@@ -1054,7 +1171,8 @@ function seed(){
 }
 
 let db;
-try{const raw=localStorage.getItem(KEY);db=raw?JSON.parse(raw):seed();}catch(e){db=seed();}
+try{const raw=ALMA.raw;db=raw?JSON.parse(raw):seed();}
+catch(e){db=seed();if(!REV){ALMA.bloqueado=true;ALMA.falla();}}  /* datos ilegibles: no se pisan */
 db.labels={...DEF_LABELS,...(db.labels||{})};
 (function(){const s=seed();['unidades','partidas','auxiliares','cuadrillas','genCols','tipos','cargos','indirectos','croquis','ui'].forEach(k=>{if(!db[k])db[k]=s[k];});})();
 
@@ -1133,13 +1251,24 @@ let saveTimer;
 function save(){
   if(REV)return;                 /* en revisión no se escribe nada */
   clearTimeout(saveTimer);
-  saveTimer=setTimeout(()=>{
-    try{localStorage.setItem(KEY,JSON.stringify(db));
-      flash('Guardado '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}));
-      schedulePush();
-    }catch(e){flash('No se pudo guardar — revisa el peso de los croquis');}
-  },250);
+  saveTimer=setTimeout(guardaYa,250);
 }
+/* Escribe ya, sin esperar. Si falla, deja el aviso fijo abajo. */
+function guardaYa(){
+  clearTimeout(saveTimer);saveTimer=null;
+  if(REV)return Promise.resolve(false);
+  let txt;
+  try{txt=JSON.stringify(db);}catch(e){ALMA.falla();return Promise.resolve(false);}
+  return ALMA.guardar(txt).then(()=>{
+    ALMA.quitarAviso();
+    flash('Guardado '+new Date().toLocaleTimeString('es-MX',{hour:'2-digit',minute:'2-digit'}));
+    schedulePush();return true;
+  },()=>{ALMA.falla();flash('No se guardó');return false;});
+}
+/* Si cierras o cambias de app con un guardado pendiente, se escribe en ese momento. */
+function guardaAlSalir(){if(saveTimer&&!ALMA.recargando)guardaYa();}
+document.addEventListener('visibilitychange',()=>{if(document.visibilityState==='hidden')guardaAlSalir();});
+window.addEventListener('pagehide',guardaAlSalir);
 
 /* ==================================================================
    1b. SINCRONIZACIÓN EN LA NUBE (Supabase)
@@ -1153,10 +1282,20 @@ const K_CODE=KEY+'_synccode', K_TS=KEY+'_remote_ts';
 
 const supaListo=()=>!!(SUPA_URL&&SUPA_KEY);
 const supaHdr=()=>({apikey:SUPA_KEY,Authorization:'Bearer '+SUPA_KEY,'Content-Type':'application/json'});
-let syncCode=localStorage.getItem(K_CODE)||'';
+let syncCode='';try{syncCode=localStorage.getItem(K_CODE)||'';}catch(e){}
 let pushTimer=null,syncTimer=null;
 const nowISO=()=>new Date().toISOString();
-const localBlob=()=>({[KEY]:localStorage.getItem(KEY)});
+const localBlob=()=>({[KEY]:JSON.stringify(db)});
+/* Lo que baja de la nube: los datos van a IndexedDB, lo demás a localStorage. */
+async function aplicaRemoto(data,ts){
+  clearTimeout(saveTimer);saveTimer=null;
+  for(const k of Object.keys(data)){
+    if(data[k]==null)continue;
+    if(k===KEY)await ALMA.guardar(data[k]);else localStorage.setItem(k,data[k]);
+  }
+  localStorage.setItem(K_TS,ts);
+  ALMA.recargando=true;location.reload();
+}
 function syncMsg(t){const e=document.getElementById('syncEstado');if(e)e.textContent=t;}
 
 function schedulePush(){
@@ -1184,9 +1323,7 @@ async function cloudPull(){
     /* no re-jalar lo propio, y no pisar mientras se está capturando */
     const escribiendo=document.activeElement&&/INPUT|SELECT|TEXTAREA/.test(document.activeElement.tagName);
     if(remoto.updated_at>localTs&&remoto.data&&!escribiendo){
-      Object.keys(remoto.data).forEach(k=>{if(remoto.data[k]!=null)localStorage.setItem(k,remoto.data[k]);});
-      localStorage.setItem(K_TS,remoto.updated_at);
-      location.reload();
+      await aplicaRemoto(remoto.data,remoto.updated_at);
     }
   }catch(e){syncMsg('Sin conexión con la nube');}
 }
@@ -1202,9 +1339,7 @@ async function connectSync(){
     const rows=await r.json();
     if(rows&&rows.length&&rows[0].data){
       if(!confirm('Ese código ya tiene datos en la nube. Se reemplaza lo que tienes aquí. ¿Continuar?')){syncMsg('Cancelado');return;}
-      Object.keys(rows[0].data).forEach(k=>{if(rows[0].data[k]!=null)localStorage.setItem(k,rows[0].data[k]);});
-      localStorage.setItem(K_TS,rows[0].updated_at);
-      location.reload();
+      await aplicaRemoto(rows[0].data,rows[0].updated_at);
     }else{
       await cloudPush();          /* la nube estaba vacía: sube lo de aquí */
       arrancarSync();renderSync();
@@ -1246,7 +1381,7 @@ function renderSync(){
 function exportCode(){
   const ta=document.getElementById('codeArea');
   try{
-    ta.value=btoa(encodeURIComponent(localStorage.getItem(KEY)||''));
+    ta.value=btoa(encodeURIComponent(JSON.stringify(db)));
     ta.select();flash('Código generado — cópialo');
   }catch(e){flash('No se pudo generar el código');}
 }
@@ -1275,9 +1410,11 @@ function importCode(){
     return;
   }
   if(!confirm('Se reemplaza todo lo que tienes ahora. ¿Continuar?'))return;
-  localStorage.setItem(KEY,json);
-  if(supaListo()&&syncCode){syncCode&&localStorage.setItem(K_TS,'');cloudPush();}
-  location.reload();
+  clearTimeout(saveTimer);saveTimer=null;
+  ALMA.guardar(json).then(async()=>{
+    if(supaListo()&&syncCode){localStorage.setItem(K_TS,'');db=d;await cloudPush();}
+    ALMA.recargando=true;location.reload();
+  },()=>{ALMA.falla();alert('No se pudo guardar lo que pegaste. Tus datos de antes siguen igual.');});
 }
 const flash=t=>{document.getElementById('statusTxt').textContent=t;};
 
